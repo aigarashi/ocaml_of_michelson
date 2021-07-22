@@ -34,6 +34,7 @@ let rec string_of_exp = function
   | LetExp (vars, Nop args, e2) -> "let " ^ string_of_ids vars ^ " = " ^ string_of_ids args ^ " in\n" ^ string_of_exp e2
   | LetExp (vars, Nested e1, e2) -> "let " ^ string_of_ids vars ^ " = " ^ string_of_exp e1 ^ " in\n" ^ string_of_exp e2
   | MatchExp (Either (l, r), x, e1, e2) -> "match " ^ x ^ " with Left " ^ l ^ " -> " ^ string_of_exp e1 ^ " | Right " ^ r ^ " -> " ^ string_of_exp e2
+  | MatchExp (Bool, x, e1, e2) -> "if " ^ x ^ " then " ^ string_of_exp e1 ^ " else " ^ string_of_exp e2
   | RetExp vars -> string_of_ids vars
 
 (* compute diffs of two var lists *)
@@ -109,6 +110,20 @@ let rec exp_of_prog kont = function
      exp_of_prog
        (fun exp -> kont (LetExp (newvars,
                                  Nested (MatchExp (Either (var1, var2), var0, kont_body1 (RetExp newvars1), kont_body2 (RetExp newvars2))),
+                                 exp)))
+       (rest, newvars)
+  | TwoBlocks ("IF", is1, is2) :: rest, var0 :: vars ->
+     let kont_body1, final_vars1 = exp_of_prog init_kont (is1, vars) in
+     let kont_body2, final_vars2 = exp_of_prog init_kont (is2, vars) in
+     let newvars1 = diff final_vars1 vars in
+     let newvars2 = diff final_vars2 vars in
+     let num_newvars = (max (List.length newvars1) (List.length newvars2)) in
+     let newvars = newVars num_newvars in
+     let newvars1 = take num_newvars final_vars1 in
+     let newvars2 = take num_newvars final_vars2 in
+     exp_of_prog
+       (fun exp -> kont (LetExp (newvars,
+                                 Nested (MatchExp (Bool, var0, kont_body1 (RetExp newvars1), kont_body2 (RetExp newvars2))),
                                  exp)))
        (rest, newvars)
 
