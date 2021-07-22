@@ -80,6 +80,11 @@ let rec exp_of_prog kont = function
      print_string (string_of_ids (var1::vars)); print_string " DUP"; print_newline();
      (* DEBUG *)
      exp_of_prog kont (rest, var1 :: var1 :: vars)
+  | Simple "SWAP" :: rest , var1 :: var2 :: vars ->
+     (* DEBUG *)
+     print_string (string_of_ids (var1::var2::vars)); print_string " SWAP"; print_newline();
+     (* DEBUG *)
+     exp_of_prog kont (rest, var2 :: var1 :: vars)
   (* DIP needs special treatment *)
   | OneBlock ("DIP", is) :: rest, var1 :: vars ->
      (* DEBUG *)
