@@ -1,0 +1,1 @@
+code { DUP; CAR; IF_NONE { DUP; PLUS; DUP } { DUP; MULT } }
