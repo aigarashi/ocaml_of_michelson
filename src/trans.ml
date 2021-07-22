@@ -58,7 +58,7 @@ let rec exp_of_prog kont = function
   (* Instructions consuming one value and producing one value *)
   | Simple (("CAR" | "CDR") as s) :: rest , var1 :: vars ->
      (* DEBUG *)
-     print_string (string_of_ids (var1::vars)); print_string s; print_newline();
+     prerr_string (string_of_ids (var1::vars)); prerr_string s; prerr_newline();
      (* DEBUG *)
      let var2 = newVar() in
      exp_of_prog
@@ -67,7 +67,7 @@ let rec exp_of_prog kont = function
   (* Instructions consuming two values and producing one value *)
   | Simple (("PLUS" | "MULT") as s) :: rest , var1 :: var2 :: vars ->
      (* DEBUG *)
-     print_string (string_of_ids (var1::var2::vars)); print_string s; print_newline();
+     prerr_string (string_of_ids (var1::var2::vars)); prerr_string s; prerr_newline();
      (* DEBUG *)
      let var3 = newVar() in
      exp_of_prog
@@ -77,27 +77,27 @@ let rec exp_of_prog kont = function
   (* DUP duplicates name of the stack top *)
   | Simple "DUP" :: rest , var1 :: vars ->
      (* DEBUG *)
-     print_string (string_of_ids (var1::vars)); print_string " DUP"; print_newline();
+     prerr_string (string_of_ids (var1::vars)); prerr_string " DUP"; prerr_newline();
      (* DEBUG *)
      exp_of_prog kont (rest, var1 :: var1 :: vars)
   | Simple "SWAP" :: rest , var1 :: var2 :: vars ->
      (* DEBUG *)
-     print_string (string_of_ids (var1::var2::vars)); print_string " SWAP"; print_newline();
+     prerr_string (string_of_ids (var1::var2::vars)); prerr_string " SWAP"; prerr_newline();
      (* DEBUG *)
      exp_of_prog kont (rest, var2 :: var1 :: vars)
   (* DIP needs special treatment *)
   | OneBlock ("DIP", is) :: rest, var1 :: vars ->
      (* DEBUG *)
-     print_string (string_of_ids (var1::vars)); print_string " DIP"; print_newline();
+     prerr_string (string_of_ids (var1::vars)); prerr_string " DIP"; prerr_newline();
      (* DEBUG END *)
      let kont_body, final_vars = exp_of_prog init_kont (is, vars) in
      (* DEBUG *)
-     print_string ("INIT: "^string_of_ids (var1::vars)); print_newline();
-     print_string ("FINAL: "^string_of_ids final_vars); print_newline();
+     prerr_string ("INIT: "^string_of_ids (var1::vars)); prerr_newline();
+     prerr_string ("FINAL: "^string_of_ids final_vars); prerr_newline();
      (* DEBUG END *)
      let newvars = diff final_vars vars in
      (* DEBUG *)
-     print_string (string_of_exp (LetExp (newvars, Nested (kont_body (RetExp newvars)), RetExp ["[_]"]))); print_newline();
+     prerr_string (string_of_exp (LetExp (newvars, Nested (kont_body (RetExp newvars)), RetExp ["[_]"]))); prerr_newline();
      (* DEBUG END *)
      exp_of_prog
        (fun exp -> kont (LetExp (newvars, Nested (kont_body (RetExp newvars)), exp)))
