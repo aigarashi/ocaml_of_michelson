@@ -16,7 +16,7 @@ rule main = parse
 | ";" { Parser.SEMI }
 
 | "code" { Parser.CODE }
-| ['A'-'Z']+
+| ['A'-'Z' '_' ]+
     { Parser.MNEMONIC (Lexing.lexeme lexbuf) }
 | eof { EOF }
 
