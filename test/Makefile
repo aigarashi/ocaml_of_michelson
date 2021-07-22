@@ -10,4 +10,4 @@ all: $(OBJS)
 	ocamlopt -i -o a.out $@
 
 clean:
-	rm -rf $(OBJS) *~
+	@rm -rf $(OBJS) *~
