@@ -3,6 +3,7 @@ OCAMLOPT=ocamlopt
 OCAMLDEP=ocamldep
 OCAMLYACC=menhir
 OCAMLLEX=ocamllex
+OCAMLFIND=ocamlfind
 INCLUDES=                 # all relevant -I options here
 OCAMLFLAGS=$(INCLUDES)    # add other options for ocamlc here
 OCAMLOPTFLAGS=$(INCLUDES) # add other options for ocamlopt here
@@ -10,31 +11,31 @@ OCAMLOPTFLAGS=$(INCLUDES) # add other options for ocamlopt here
 PROGNAME=ocaml_of_michelson
 
 # The list of object files for prog1
-OBJS=syntax.cmx parser.cmx lexer.cmx trans.cmx main.cmx
+OBJS=syntax.cmx mcParser.cmx mcLexer.cmx trans.cmx main.cmx
 
-DEPEND += lexer.ml parser.ml
+DEPEND += mcLexer.ml mcParser.ml
 
 all: $(DEPEND) $(OBJS)
-	$(OCAMLOPT) -o $(PROGNAME) $(OCAMLFLAGS) $(OBJS)
+	$(OCAMLFIND) $(OCAMLOPT) -o $(PROGNAME) $(OCAMLFLAGS) ocamlcommon.cmxa $(OBJS)   -package compiler-libs.common
 
 # Common rules
 .SUFFIXES: .ml .mli .cmo .cmi .cmx
 
 .ml.cmo:
-	$(OCAMLC) $(OCAMLFLAGS) -c $<
+	$(OCAMLFIND) $(OCAMLC) $(OCAMLFLAGS) -c $< -package compiler-libs.common
 
 .mli.cmi:
-	$(OCAMLC) $(OCAMLFLAGS) -c $<
+	$(OCAMLFIND) $(OCAMLC) $(OCAMLFLAGS) -c $< -package compiler-libs.common
 
 .ml.cmx:
-	$(OCAMLOPT) $(OCAMLOPTFLAGS) -c $<
+	$(OCAMLFIND) $(OCAMLOPT) $(OCAMLOPTFLAGS) -c $< -package compiler-libs.common
 
-parser.ml parser.mli: parser.mly	
+mcParser.ml mcParser.mli: mcParser.mly	
 	@rm -f $@
 	$(OCAMLYACC) -v $<
 	@chmod -w $@
 
-lexer.ml: lexer.mll
+mcLexer.ml: mcLexer.mll
 	@rm -f $@
 	$(OCAMLLEX) $<
 	@chmod -w $@
@@ -42,7 +43,7 @@ lexer.ml: lexer.mll
 # Clean up
 clean:
 	rm -f $(PROGNAME)
-	rm -f *.cm[iox] *.o *~ parser.ml parser.mli parser.output lexer.ml .depend
+	rm -f *.cm[iox] *.o *~ mcParser.ml mcPparser.mli parser.output mcLexer.ml .depend
 
 # Dependencies
 depend:: $(DEPEND)

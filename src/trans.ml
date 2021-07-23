@@ -1,4 +1,5 @@
-open Syntax 
+open Syntax
+open Ast_helper
 
 let newVar =
   let counter = ref (-1) in
@@ -12,6 +13,7 @@ let rec take n l =
   if n = 0 then []
   else match l with [] -> failwith "Take" | h :: t -> h :: take (n-1) t
 
+(*
 type branching_type = Either of string * string | Bool | Option of string
 
 type exp =
@@ -19,16 +21,70 @@ type exp =
   | MatchExp of branching_type * string * exp * exp
   | RetExp of string list
 and rhs =
-  | Apply of string * string list
-  | Nop of string list
+  | Apply of Longident.t * Longident.t list
+  | Nop of Longident.t list
   | Nested of exp
+ *)
+
+(* Auxiliary functions to build AST *)
+let exp_of_var id =
+  Exp.ident (Location.mknoloc (Longident.Lident id))
+
+let pat_of_var id = Pat.var (Location.mknoloc id)
+
+let exp_of_tuple_vars ids =
+  Exp.tuple (List.map (fun id -> exp_of_var id) ids)
+
+let pat_of_tuple_vars ids =
+  Pat.tuple (List.map (fun id -> pat_of_var id) ids)
+
+let let_ ids rhs body =
+  Exp.let_ Asttypes.Nonrecursive
+    [ { pvb_pat  = pat_of_tuple_vars ids;
+        pvb_expr = rhs;
+        pvb_attributes = [];
+       pvb_loc = Location.none } ]
+    body
+
+let call id ids =
+  Exp.apply (exp_of_var id) [Asttypes.Nolabel, exp_of_tuple_vars ids]
+
+let ifleft exp0 var1 exp1 var2 exp2 =
+  Exp.match_ exp0
+    [ Exp.case
+        (Pat.construct
+           (Location.mknoloc (Longident.Lident "Left"))
+           (Some (pat_of_var var1)))
+        exp1
+    ; Exp.case
+        (Pat.construct
+           (Location.mknoloc (Longident.Lident "Right"))
+           (Some (pat_of_var var2)))
+        exp2
+    ]
+
+let ifnone exp0 exp1 var2 exp2 =
+  Exp.match_ exp0
+    [ Exp.case
+        (Pat.construct
+           (Location.mknoloc (Longident.Lident "None")) None)
+        exp1
+    ; Exp.case
+        (Pat.construct
+           (Location.mknoloc (Longident.Lident "Some"))
+           (Some (pat_of_var var2)))
+        exp2
+    ]
+
+let if_ exp0 exp1 exp2 =
+  Exp.ifthenelse exp0 exp1 (Some exp2)
 
 (* pretty printing *)
 let rec string_of_ids = function
   | [] -> "()"
   | [x] -> x
   | x :: xs -> x ^ ", " ^ string_of_ids xs
-
+(*
 let rec string_of_exp = function
   | LetExp (vars, Apply (fname, args), e2) -> "let " ^ string_of_ids vars ^ " = " ^ fname ^ "(" ^ string_of_ids args ^ ") in\n" ^ string_of_exp e2
   | LetExp (vars, Nop args, e2) -> "let " ^ string_of_ids vars ^ " = " ^ string_of_ids args ^ " in\n" ^ string_of_exp e2
@@ -37,7 +93,7 @@ let rec string_of_exp = function
   | MatchExp (Option r, x, e1, e2) -> "match " ^ x ^ " with None -> " ^ string_of_exp e1 ^ " | Some " ^ r ^ " -> " ^ string_of_exp e2
   | MatchExp (Bool, x, e1, e2) -> "if " ^ x ^ " then " ^ string_of_exp e1 ^ " else " ^ string_of_exp e2
   | RetExp vars -> string_of_ids vars
-
+ *)
 (* compute diffs of two var lists *)
 (* diff [x1, ..., xn, y1, ..., ym] [z1, .., zk, y1, ..., ym] = [x1, ..., xn] *)
 let diff vars1 vars2 =
@@ -62,7 +118,7 @@ let rec exp_of_prog kont = function
      (* DEBUG *)
      let var2 = newVar() in
      exp_of_prog
-       (fun exp -> kont (LetExp ([var2], Apply (String.lowercase_ascii s, [var1]), exp)))
+       (fun exp -> kont (let_ [var2] (call (String.lowercase_ascii s) [var1]) exp))
        (rest, var2 :: vars)
   (* Instructions consuming two values and producing one value *)
   | Simple (("PLUS" | "MULT") as s) :: rest , var1 :: var2 :: vars ->
@@ -72,7 +128,7 @@ let rec exp_of_prog kont = function
      let var3 = newVar() in
      exp_of_prog
        (fun exp ->
-         kont (LetExp ([var3], Apply (String.lowercase_ascii s, [var1; var2]), exp)))
+         kont (let_ [var3] (call (String.lowercase_ascii s) [var1; var2]) exp))
        (rest, var3 :: vars)
   (* DUP duplicates name of the stack top *)
   | Simple "DUP" :: rest , var1 :: vars ->
@@ -96,11 +152,10 @@ let rec exp_of_prog kont = function
      prerr_string ("FINAL: "^string_of_ids final_vars); prerr_newline();
      (* DEBUG END *)
      let newvars = diff final_vars vars in
-     (* DEBUG *)
-     prerr_string (string_of_exp (LetExp (newvars, Nested (kont_body (RetExp newvars)), RetExp ["[_]"]))); prerr_newline();
-     (* DEBUG END *)
      exp_of_prog
-       (fun exp -> kont (LetExp (newvars, Nested (kont_body (RetExp newvars)), exp)))
+       (fun exp -> kont (let_ newvars
+                           (kont_body (exp_of_tuple_vars newvars))
+                           exp))
        (rest, var1 :: final_vars)
   | TwoBlocks ("IF_LEFT", is1, is2) :: rest, var0 :: vars ->
      let var1 = newVar () in
@@ -114,9 +169,11 @@ let rec exp_of_prog kont = function
      let newvars1 = take num_newvars final_vars1 in
      let newvars2 = take num_newvars final_vars2 in
      exp_of_prog
-       (fun exp -> kont (LetExp (newvars,
-                                 Nested (MatchExp (Either (var1, var2), var0, kont_body1 (RetExp newvars1), kont_body2 (RetExp newvars2))),
-                                 exp)))
+       (fun exp -> kont (let_ newvars
+                           (ifleft (exp_of_var var0)
+                              var1 (kont_body1 (exp_of_tuple_vars newvars1))
+                              var2 (kont_body2 (exp_of_tuple_vars newvars2)))
+                           exp))
        (rest, newvars)
   | TwoBlocks ("IF", is1, is2) :: rest, var0 :: vars ->
      let kont_body1, final_vars1 = exp_of_prog init_kont (is1, vars) in
@@ -128,9 +185,11 @@ let rec exp_of_prog kont = function
      let newvars1 = take num_newvars final_vars1 in
      let newvars2 = take num_newvars final_vars2 in
      exp_of_prog
-       (fun exp -> kont (LetExp (newvars,
-                                 Nested (MatchExp (Bool, var0, kont_body1 (RetExp newvars1), kont_body2 (RetExp newvars2))),
-                                 exp)))
+       (fun exp -> kont (let_ newvars
+                           (if_ (exp_of_var var0)
+                              (kont_body1 (exp_of_tuple_vars newvars1))
+                              (kont_body2 (exp_of_tuple_vars newvars2)))
+                           exp))
        (rest, newvars)
   | TwoBlocks ("IF_NONE", is1, is2) :: rest, var0 :: vars ->
      let kont_body1, final_vars1 = exp_of_prog init_kont (is1, vars) in
@@ -143,13 +202,15 @@ let rec exp_of_prog kont = function
      let newvars1 = take num_newvars final_vars1 in
      let newvars2 = take num_newvars final_vars2 in
      exp_of_prog
-       (fun exp -> kont (LetExp (newvars,
-                                 Nested (MatchExp (Option var2, var0, kont_body1 (RetExp newvars1), kont_body2 (RetExp newvars2))),
-                                 exp)))
+       (fun exp -> kont (let_ newvars
+                           (ifnone (exp_of_var var0)
+                              (kont_body1 (exp_of_tuple_vars newvars1))
+                              var2 (kont_body2 (exp_of_tuple_vars newvars2)))
+                           exp))
        (rest, newvars)
 
 let exp_of_code (Code body) =
   let kont, ids = exp_of_prog init_kont (body, ["param_st"]) in
   match ids with
     [] -> failwith "exp_of_code: Stack is empty!"
-  | x :: _ -> kont (RetExp [x])
+  | x :: _ -> kont (exp_of_tuple_vars [x])
