@@ -13,6 +13,10 @@ let rec take n l =
   if n = 0 then []
   else match l with [] -> failwith "Take" | h :: t -> h :: take (n-1) t
 
+let rec drop n l =
+  if n = 0 then l
+  else match l with [] -> failwith "Take" | h :: t -> drop (n-1) t
+
 (*
 type branching_type = Either of string * string | Bool | Option of string
 
@@ -113,6 +117,14 @@ let init_kont exp = exp
  kont represents instructions already processed *)
 let rec exp_of_prog kont = function
   | [], vars -> (kont, vars)
+  (* Instructions consuming one value and producing none *)
+  | Simple ("FAILWITH" as s) :: rest , var1 :: vars ->
+     (* DEBUG *)
+     prerr_string (string_of_ids (var1::vars)); prerr_string s; prerr_newline();
+     (* DEBUG *)
+     exp_of_prog
+       (fun exp -> kont (let_ [] (call (String.lowercase_ascii s) [var1]) exp))
+       (rest, vars)
   (* Instructions consuming one value and producing one value *)
   | Simple (("CAR" | "CDR") as s) :: rest , var1 :: vars ->
      (* DEBUG *)
@@ -182,12 +194,17 @@ let rec exp_of_prog kont = function
                               var1 (kont_body1 (exp_of_tuple_vars newvars1))
                               var2 (kont_body2 (exp_of_tuple_vars newvars2)))
                            exp))
-       (rest, newvars)
+       (rest, newvars @ drop num_newvars final_vars1)
   | TwoBlocks ("IF", is1, is2) :: rest, var0 :: vars ->
      let kont_body1, final_vars1 = exp_of_prog init_kont (is1, vars) in
      let kont_body2, final_vars2 = exp_of_prog init_kont (is2, vars) in
      let newvars1 = diff final_vars1 vars in
      let newvars2 = diff final_vars2 vars in
+     (* DEBUG *)
+     prerr_string ("IF INIT: "^string_of_ids (var0::vars)); prerr_newline();
+     prerr_string ("If BRANCH1: "^string_of_ids final_vars1); prerr_newline();
+     prerr_string ("If BRANCH2: "^string_of_ids final_vars2); prerr_newline();
+     (* DEBUG END *)
      let num_newvars = (max (List.length newvars1) (List.length newvars2)) in
      let newvars = newVars num_newvars in
      let newvars1 = take num_newvars final_vars1 in
@@ -198,7 +215,7 @@ let rec exp_of_prog kont = function
                               (kont_body1 (exp_of_tuple_vars newvars1))
                               (kont_body2 (exp_of_tuple_vars newvars2)))
                            exp))
-       (rest, newvars)
+       (rest, newvars @ drop num_newvars final_vars1)
   | TwoBlocks ("IF_NONE", is1, is2) :: rest, var0 :: vars ->
      let kont_body1, final_vars1 = exp_of_prog init_kont (is1, vars) in
      let var2 = newVar () in
@@ -215,7 +232,7 @@ let rec exp_of_prog kont = function
                               (kont_body1 (exp_of_tuple_vars newvars1))
                               var2 (kont_body2 (exp_of_tuple_vars newvars2)))
                            exp))
-       (rest, newvars)
+       (rest, newvars @ drop num_newvars final_vars1)
 
 let exp_of_code (Code body) =
   let kont, ids = exp_of_prog init_kont (body, ["param_st"]) in
