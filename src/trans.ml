@@ -91,37 +91,32 @@ let diff vars1 vars2 =
 
 let init_kont exp = exp
 
+let inst_spec = [ (* consume, produce, inst list *)
+    1, 0, [
+        "FAILWITH";
+      ];
+    1, 1, [
+        "CAR";
+        "CDR";
+      ];
+    2, 1, [
+        "MULT";
+        "PLUS";
+      ]
+  ]
+
+let find_spec s =
+  let rec aux = function
+    | [] -> None
+    | (consume, produce, inst_list) :: rest ->
+       if List.mem s inst_list then Some (consume, produce)
+       else aux rest
+  in aux inst_spec
+
 (* translator exp_of_prog
  kont represents instructions already processed *)
 let rec exp_of_prog kont = function
   | [], vars -> (kont, vars)
-  (* Instructions consuming one value and producing none *)
-  | Simple ("FAILWITH" as s) :: rest , var1 :: vars ->
-     (* DEBUG *)
-     prerr_string (string_of_ids (var1::vars)); prerr_string s; prerr_newline();
-     (* DEBUG *)
-     exp_of_prog
-       (fun exp -> kont (let_ [] (call (String.lowercase_ascii s) [var1]) exp))
-       (rest, vars)
-  (* Instructions consuming one value and producing one value *)
-  | Simple (("CAR" | "CDR") as s) :: rest , var1 :: vars ->
-     (* DEBUG *)
-     prerr_string (string_of_ids (var1::vars)); prerr_string s; prerr_newline();
-     (* DEBUG *)
-     let var2 = newVar() in
-     exp_of_prog
-       (fun exp -> kont (let_ [var2] (call (String.lowercase_ascii s) [var1]) exp))
-       (rest, var2 :: vars)
-  (* Instructions consuming two values and producing one value *)
-  | Simple (("PLUS" | "MULT") as s) :: rest , var1 :: var2 :: vars ->
-     (* DEBUG *)
-     prerr_string (string_of_ids (var1::var2::vars)); prerr_string s; prerr_newline();
-     (* DEBUG *)
-     let var3 = newVar() in
-     exp_of_prog
-       (fun exp ->
-         kont (let_ [var3] (call (String.lowercase_ascii s) [var1; var2]) exp))
-       (rest, var3 :: vars)
   | SimpleArg2 ("PUSH", ty, c) :: rest, vars ->
      let var0 = newVar() in
      exp_of_prog
@@ -211,6 +206,22 @@ let rec exp_of_prog kont = function
                               var2 (kont_body2 (exp_of_tuple_vars newvars2)))
                            exp))
        (rest, newvars @ drop num_newvars final_vars1)
+  (* General instructions consuming n values and producing m values *)
+  | Simple s :: rest, vars -> begin
+     match find_spec s with
+     | Some (n, m) ->
+        (* DEBUG *)
+        prerr_string (string_of_ids vars); prerr_string s; prerr_newline();
+        (* DEBUG *)
+        assert(List.length vars >= n);
+        let consumed_vars, untouched_vars = take n vars, drop n vars in
+        let produced_vars = newVars m in
+        exp_of_prog
+          (fun exp ->
+            kont (let_ produced_vars (call (String.lowercase_ascii s) consumed_vars) exp))
+          (rest, produced_vars @ untouched_vars)
+     | None -> failwith ("Instruction not implemented: " ^ s)
+     end
 
 let exp_of_code (Code body) =
   let kont, ids = exp_of_prog init_kont (body, ["param_st"]) in
