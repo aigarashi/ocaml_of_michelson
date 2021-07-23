@@ -206,6 +206,11 @@ let rec exp_of_prog kont = function
                               var2 (kont_body2 (exp_of_tuple_vars newvars2)))
                            exp))
        (rest, newvars @ drop num_newvars final_vars1)
+  (* DROP *)
+  | Simple "DROP" :: rest, vars -> exp_of_prog kont (SimpleWithNum ("DROP", 1) :: rest, vars)
+  | SimpleWithNum ("DROP", n) :: rest, vars ->
+     assert (n >= 0 && List.length vars >= n);
+     exp_of_prog kont (rest, drop n vars)
   (* General instructions consuming n values and producing m values *)
   | Simple s :: rest, vars -> begin
      match find_spec s with
