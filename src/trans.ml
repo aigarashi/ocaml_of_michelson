@@ -132,7 +132,7 @@ let rec exp_of_prog kont = function
      (* DEBUG *)
      assert(n >= 1 && List.length vars >= n);
      exp_of_prog kont (rest, List.nth vars (n-1) :: vars)
-  | Simple "SWAP" :: rest , var1 :: var2 :: vars ->
+  | Simple "SWAP" :: rest, var1 :: var2 :: vars ->
      (* DEBUG *)
      prerr_string (string_of_ids (var1::var2::vars)); prerr_string " SWAP"; prerr_newline();
      (* DEBUG *)
@@ -153,6 +153,20 @@ let rec exp_of_prog kont = function
                            (kont_body (exp_of_tuple_vars newvars))
                            exp))
        (rest, var1 :: final_vars)
+  (* DIG *)
+  | SimpleWithNum ("DIG", n) :: rest, vars ->
+     (* DEBUG *)
+     prerr_string (string_of_ids vars); prerr_string " DIG "; prerr_string (string_of_int n); prerr_newline();
+     (* DEBUG *)
+     assert(n >= 0 && List.length vars >= n+1);
+     exp_of_prog kont (rest, List.nth vars n :: take n vars @ drop (n+1) vars)
+  (* DUG *)
+  | SimpleWithNum ("DUG", n) :: rest, var1 :: vars ->
+     (* DEBUG *)
+     prerr_string (string_of_ids (var1::vars)); prerr_string " DUG "; prerr_string (string_of_int n); prerr_newline();
+     (* DEBUG *)
+     assert(n >= 0 && List.length vars >= n);
+     exp_of_prog kont (rest, take n vars @ var1 :: drop n vars)
   | TwoBlocks ("IF_LEFT", is1, is2) :: rest, var0 :: vars ->
      let var1 = newVar () in
      let kont_body1, final_vars1 = exp_of_prog init_kont (is1, var1::vars) in
