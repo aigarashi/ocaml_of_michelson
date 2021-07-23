@@ -6,6 +6,7 @@ type inst =
   | SimpleArg2 of string * string * Parsetree.expression (* such as PUSH int 0 *)
   | SimpleWithNum of string * int
   | OneBlock of string * inst list
+  | OneBlockWithNum of string * int * inst list
   | TwoBlocks of string * inst list * inst list
 
 type program = 

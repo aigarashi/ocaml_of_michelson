@@ -138,21 +138,27 @@ let rec exp_of_prog kont = function
      (* DEBUG *)
      exp_of_prog kont (rest, var2 :: var1 :: vars)
   (* DIP needs special treatment *)
-  | OneBlock ("DIP", is) :: rest, var1 :: vars ->
+  | OneBlock ("DIP", is) :: rest, vars ->
+     exp_of_prog kont (OneBlockWithNum ("DIP", 1, is) :: rest, vars)
+  | OneBlockWithNum ("DIP", n, is) :: rest, vars ->
      (* DEBUG *)
-     prerr_string (string_of_ids (var1::vars)); prerr_string " DIP"; prerr_newline();
+     prerr_string (string_of_ids vars); prerr_string " DIP ";
+     prerr_string (string_of_int n); prerr_newline();
      (* DEBUG END *)
-     let kont_body, final_vars = exp_of_prog init_kont (is, vars) in
-     (* DEBUG *)
-     prerr_string ("INIT: "^string_of_ids (var1::vars)); prerr_newline();
-     prerr_string ("FINAL: "^string_of_ids final_vars); prerr_newline();
-     (* DEBUG END *)
-     let newvars = diff final_vars vars in
-     exp_of_prog
-       (fun exp -> kont (let_ newvars
-                           (kont_body (exp_of_tuple_vars newvars))
-                           exp))
-       (rest, var1 :: final_vars)
+     if n = 0 then exp_of_prog kont (rest, vars)
+     else
+       let protected, restvars = take n vars, drop n vars in
+       let kont_body, final_vars = exp_of_prog init_kont (is, restvars) in
+       (* DEBUG *)
+       prerr_string ("INIT: "^string_of_ids vars); prerr_newline();
+       prerr_string ("FINAL: "^string_of_ids final_vars); prerr_newline();
+       (* DEBUG END *)
+       let newvars = diff final_vars restvars in
+       exp_of_prog
+         (fun exp -> kont (let_ newvars
+                             (kont_body (exp_of_tuple_vars newvars))
+                             exp))
+         (rest, protected @ final_vars)
   (* DIG *)
   | SimpleWithNum ("DIG", n) :: rest, vars ->
      (* DEBUG *)

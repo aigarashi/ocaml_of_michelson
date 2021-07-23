@@ -24,6 +24,7 @@ SingleInst :
   | m=MNEMONIC ty=LCID i=INTV { SimpleArg2 (m, ty, Exp.constant (Pconst_integer (i, None))) }
   | m=MNEMONIC i=INTV { SimpleWithNum (m, int_of_string i) }
   | m=MNEMONIC LBRACE is=InstList RBRACE { OneBlock (m, is) }
+  | m=MNEMONIC i=INTV LBRACE is=InstList RBRACE { OneBlockWithNum (m, int_of_string i, is) }
   | m=MNEMONIC LBRACE is1=InstList RBRACE LBRACE is2=InstList RBRACE { TwoBlocks (m, is1, is2) }
                  
 InstList :
