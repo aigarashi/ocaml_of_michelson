@@ -17,19 +17,6 @@ let rec drop n l =
   if n = 0 then l
   else match l with [] -> failwith "Take" | h :: t -> drop (n-1) t
 
-(*
-type branching_type = Either of string * string | Bool | Option of string
-
-type exp =
-  | LetExp of string list * rhs * exp
-  | MatchExp of branching_type * string * exp * exp
-  | RetExp of string list
-and rhs =
-  | Apply of Longident.t * Longident.t list
-  | Nop of Longident.t list
-  | Nested of exp
- *)
-
 (* Auxiliary functions to build AST *)
 let exp_of_var id =
   Exp.ident (Location.mknoloc (Longident.Lident id))
@@ -90,16 +77,7 @@ let rec string_of_ids = function
   | [] -> "()"
   | [x] -> x
   | x :: xs -> x ^ ", " ^ string_of_ids xs
-(*
-let rec string_of_exp = function
-  | LetExp (vars, Apply (fname, args), e2) -> "let " ^ string_of_ids vars ^ " = " ^ fname ^ "(" ^ string_of_ids args ^ ") in\n" ^ string_of_exp e2
-  | LetExp (vars, Nop args, e2) -> "let " ^ string_of_ids vars ^ " = " ^ string_of_ids args ^ " in\n" ^ string_of_exp e2
-  | LetExp (vars, Nested e1, e2) -> "let " ^ string_of_ids vars ^ " = " ^ string_of_exp e1 ^ " in\n" ^ string_of_exp e2
-  | MatchExp (Either (l, r), x, e1, e2) -> "match " ^ x ^ " with Left " ^ l ^ " -> " ^ string_of_exp e1 ^ " | Right " ^ r ^ " -> " ^ string_of_exp e2
-  | MatchExp (Option r, x, e1, e2) -> "match " ^ x ^ " with None -> " ^ string_of_exp e1 ^ " | Some " ^ r ^ " -> " ^ string_of_exp e2
-  | MatchExp (Bool, x, e1, e2) -> "if " ^ x ^ " then " ^ string_of_exp e1 ^ " else " ^ string_of_exp e2
-  | RetExp vars -> string_of_ids vars
- *)
+
 (* compute diffs of two var lists *)
 (* diff [x1, ..., xn, y1, ..., ym] [z1, .., zk, y1, ..., ym] = [x1, ..., xn] *)
 let diff vars1 vars2 =
