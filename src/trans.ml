@@ -123,12 +123,15 @@ let rec exp_of_prog kont = function
        (fun exp ->
          kont (let_ [var0] c exp))
        (rest, var0 :: vars)
-  (* DUP duplicates name of the stack top *)
-  | Simple "DUP" :: rest , var1 :: vars ->
+  (* DUP duplicates name of the nth element of the stack *)
+  | Simple "DUP" :: rest , vars ->
+     exp_of_prog kont (SimpleWithNum ("DUP", 1) :: rest, vars)
+  | SimpleWithNum ("DUP", n) :: rest, vars ->
      (* DEBUG *)
-     prerr_string (string_of_ids (var1::vars)); prerr_string " DUP"; prerr_newline();
+     prerr_string (string_of_ids vars); prerr_string " DUP"; prerr_newline();
      (* DEBUG *)
-     exp_of_prog kont (rest, var1 :: var1 :: vars)
+     assert(n >= 1 && List.length vars >= n);
+     exp_of_prog kont (rest, List.nth vars (n-1) :: vars)
   | Simple "SWAP" :: rest , var1 :: var2 :: vars ->
      (* DEBUG *)
      prerr_string (string_of_ids (var1::var2::vars)); prerr_string " SWAP"; prerr_newline();
