@@ -92,14 +92,24 @@ let diff vars1 vars2 =
 let init_kont exp = exp
 
 let inst_spec = [ (* consume, produce, inst list *)
+    0, 1, [
+        "UNIT";
+      ];
     1, 0, [
         "FAILWITH";
       ];
     1, 1, [
         "CAR";
         "CDR";
+        "EQ";
+        "GE";
+        "GT";
+        "LE";
+        "LT";
+        "NEQ";
       ];
     2, 1, [
+        "COMPARE";
         "MULT";
         "PLUS";
       ]
