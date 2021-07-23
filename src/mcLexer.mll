@@ -9,7 +9,7 @@ rule main = parse
   [' ' '\009' '\012' '\n']+     { main lexbuf }
 
 | ['0'-'9']+
-    { McParser.INTV (int_of_string (Lexing.lexeme lexbuf)) }
+    { McParser.INTV (Lexing.lexeme lexbuf) }
 
 | "{" { McParser.LBRACE }
 | "}" { McParser.RBRACE }
@@ -18,6 +18,10 @@ rule main = parse
 | "code" { McParser.CODE }
 | ['A'-'Z' '_' ]+
     { McParser.MNEMONIC (Lexing.lexeme lexbuf) }
+| ['a'-'z']+
+    { McParser.LCID (Lexing.lexeme lexbuf) }
+| '"' (_ # '"')* '"'
+    { let lexeme = Lexing.lexeme lexbuf in
+       McParser.STR (String.sub lexeme 1 (String.length lexeme - 2))
+    }
 | eof { EOF }
-
-

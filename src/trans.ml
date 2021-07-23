@@ -32,11 +32,13 @@ let exp_of_var id =
 
 let pat_of_var id = Pat.var (Location.mknoloc id)
 
-let exp_of_tuple_vars ids =
-  Exp.tuple (List.map (fun id -> exp_of_var id) ids)
+let exp_of_tuple_vars = function
+  | [id] -> exp_of_var id
+  | ids -> Exp.tuple (List.map (fun id -> exp_of_var id) ids)
 
-let pat_of_tuple_vars ids =
-  Pat.tuple (List.map (fun id -> pat_of_var id) ids)
+let pat_of_tuple_vars = function
+  | [id] -> pat_of_var id
+  | ids -> Pat.tuple (List.map (fun id -> pat_of_var id) ids)
 
 let let_ ids rhs body =
   Exp.let_ Asttypes.Nonrecursive
@@ -130,6 +132,12 @@ let rec exp_of_prog kont = function
        (fun exp ->
          kont (let_ [var3] (call (String.lowercase_ascii s) [var1; var2]) exp))
        (rest, var3 :: vars)
+  | SimpleArg2 ("PUSH", ty, c) :: rest, vars ->
+     let var0 = newVar() in
+     exp_of_prog
+       (fun exp ->
+         kont (let_ [var0] c exp))
+       (rest, var0 :: vars)
   (* DUP duplicates name of the stack top *)
   | Simple "DUP" :: rest , var1 :: vars ->
      (* DEBUG *)
