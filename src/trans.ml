@@ -40,7 +40,8 @@ let let_ ids rhs body =
     body
 
 let call id ids =
-  Exp.apply (exp_of_var id) [Asttypes.Nolabel, exp_of_tuple_vars ids]
+  Exp.apply (exp_of_var id)
+    (List.map (fun id -> Asttypes.Nolabel, exp_of_var id) ids)
 
 let ifleft exp0 var1 exp1 var2 exp2 =
   Exp.match_ exp0
@@ -91,37 +92,10 @@ let diff vars1 vars2 =
 
 let init_kont exp = exp
 
-let inst_spec = [ (* consume, produce, inst list *)
-    0, 1, [
-        "UNIT";
-      ];
-    1, 0, [
-        "FAILWITH";
-      ];
-    1, 1, [
-        "CAR";
-        "CDR";
-        "EQ";
-        "GE";
-        "GT";
-        "LE";
-        "LT";
-        "NEQ";
-      ];
-    2, 1, [
-        "COMPARE";
-        "MULT";
-        "PLUS";
-      ]
-  ]
-
-let find_spec s =
-  let rec aux = function
-    | [] -> None
-    | (consume, produce, inst_list) :: rest ->
-       if List.mem s inst_list then Some (consume, produce)
-       else aux rest
-  in aux inst_spec
+let find_spec =
+  (* FAILWITH is a special instruction which generates nothing and not in test/inst.mli *)
+  let v = ("failwith", (1, 0)) ::  InstSpec.v in
+  fun s -> List.assoc s v
 
 (* translator exp_of_prog
  kont represents instructions already processed *)
@@ -134,7 +108,7 @@ let rec exp_of_prog kont = function
          kont (let_ [var0] c exp))
        (rest, var0 :: vars)
   (* DUP duplicates name of the nth element of the stack *)
-  | Simple "DUP" :: rest , vars ->
+  | Simple "DUP" :: rest, vars ->
      exp_of_prog kont (SimpleWithNum ("DUP", 1) :: rest, vars)
   | SimpleWithNum ("DUP", n) :: rest, vars ->
      (* DEBUG *)
@@ -246,8 +220,9 @@ let rec exp_of_prog kont = function
      exp_of_prog kont (rest, drop n vars)
   (* General instructions consuming n values and producing m values *)
   | Simple s :: rest, vars -> begin
-     match find_spec s with
-     | Some (n, m) ->
+      try
+        let s_lowered = String.lowercase_ascii s in
+        let (n, m) = find_spec s_lowered in
         (* DEBUG *)
         prerr_string (string_of_ids vars); prerr_string s; prerr_newline();
         (* DEBUG *)
@@ -256,9 +231,9 @@ let rec exp_of_prog kont = function
         let produced_vars = newVars m in
         exp_of_prog
           (fun exp ->
-            kont (let_ produced_vars (call (String.lowercase_ascii s) consumed_vars) exp))
+            kont (let_ produced_vars (call s_lowered consumed_vars) exp))
           (rest, produced_vars @ untouched_vars)
-     | None -> failwith ("Instruction not implemented: " ^ s)
+     with Not_found -> failwith ("Instruction not implemented: " ^ s)
      end
 
 let exp_of_code (Code body) =
