@@ -1,1 +1,1 @@
-code { DUP; IF {} { PUSH string "error"; FAILWITH } }
+code { DUP; IF { DUP } { PUSH string "error"; FAILWITH } }
