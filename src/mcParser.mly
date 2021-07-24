@@ -21,6 +21,7 @@ toplevel :
 SingleInst :
   | m=MNEMONIC { Simple m }
   | m=MNEMONIC ty=LCID { SimpleArg1 (m, ty) }
+  | m=MNEMONIC ty1=LCID ty2=LCID { SimpleArgTyTy (m, ty1, ty2) }
   | m=MNEMONIC ty=LCID s=STR { SimpleArg2 (m, ty, Exp.constant (Pconst_string (s, Location.none, None))) }
   | m=MNEMONIC ty=LCID i=INTV { SimpleArg2 (m, ty, Exp.constant (Pconst_integer (i, None))) }
   | m=MNEMONIC ty=LCID b=BOOL { SimpleArg2 (m, ty, Exp.construct (Location.mknoloc (Longident.Lident (string_of_bool b))) None) }

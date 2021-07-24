@@ -1,5 +1,8 @@
-type ('a, 'b) either = Left of 'a | Right of 'b
+type ('a, 'b) or_ = Left of 'a | Right of 'b
 type never
+type 'a set
+type ('k, 't) map
+type ('k, 't) big_map = ('k, 't) map
 
 (* generic comparison *)
 val eq : int -> bool
@@ -44,6 +47,13 @@ val slice : nat -> nat -> string -> string option
 val car : 'a * 'b -> 'a
 val cdr : 'a * 'b -> 'b
 
+(* Operations on big_maps *)
+val empty_big_map : unit -> ('k, 'v) big_map
+val get : 'k -> ('k, 'v) big_map -> 'v option
+val mem : 'k -> ('k, 'v) big_map -> bool
+val update : 'k -> 'v option -> ('k, 'v) big_map -> ('k, 'v) big_map
+(* instructions returning multiple values are not supported yet *)
+val get_and_update :  'k -> 'v option -> ('k, 'v) big_map -> 'v option * ('k, 'v) big_map
 
 (* Domain specific data types *)
 type timestamp = int (* for simplicity *)
