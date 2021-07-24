@@ -95,7 +95,10 @@ let init_kont exp = exp
 let find_spec =
   (* FAILWITH is a special instruction which generates nothing and not in test/inst.mli *)
   let v = ("failwith", (1, 0)) ::  InstSpec.v in
-  fun s -> List.assoc s v
+  (* the instruction name maybe a keyword, in which case an underscore
+     is added to the function name in test/inst.mli *)
+  fun s -> try (s, List.assoc s v) with
+           | Not_found -> let s = s ^ "_" in (s, List.assoc s v)
 
 (* translator exp_of_prog
  kont represents instructions already processed *)
@@ -221,17 +224,16 @@ let rec exp_of_prog kont = function
   (* General instructions consuming n values and producing m values *)
   | Simple s :: rest, vars -> begin
       try
-        let s_lowered = String.lowercase_ascii s in
-        let (n, m) = find_spec s_lowered in
+        let funname, (n, m) = find_spec (String.lowercase_ascii s) in
         (* DEBUG *)
-        prerr_string (string_of_ids vars); prerr_string s; prerr_newline();
+        prerr_string (string_of_ids vars); prerr_string funname; prerr_newline();
         (* DEBUG *)
         assert(List.length vars >= n);
         let consumed_vars, untouched_vars = take n vars, drop n vars in
         let produced_vars = newVars m in
         exp_of_prog
           (fun exp ->
-            kont (let_ produced_vars (call s_lowered consumed_vars) exp))
+            kont (let_ produced_vars (call funname consumed_vars) exp))
           (rest, produced_vars @ untouched_vars)
      with Not_found -> failwith ("Instruction not implemented: " ^ s)
      end
