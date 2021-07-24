@@ -7,6 +7,7 @@ let reservedWords = [
 rule main = parse
   (* ignore spacing and newline characters *)
   [' ' '\009' '\012' '\n']+     { main lexbuf }
+| '%' ['A'-'Z' 'a'-'z']+  { main lexbuf }
 
 | ['0'-'9']+
     { McParser.INTV (Lexing.lexeme lexbuf) }
