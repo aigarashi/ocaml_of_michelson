@@ -79,7 +79,7 @@ val size : 'a list -> nat
 (* Domain specific data types *)
 type timestamp = int (* for simplicity *)
 type mutez = int     (* for simplicity *)
-type address
+type address = string (* for simplicity *)
 type 'a contract
 type operation
 type key
