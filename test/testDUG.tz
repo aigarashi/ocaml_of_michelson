@@ -1,0 +1,1 @@
+code { DUP; DUP; PLUS; DUP; DUG 2; PLUS; MULT }
