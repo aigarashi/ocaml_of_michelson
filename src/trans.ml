@@ -93,23 +93,25 @@ let diff vars1 vars2 =
 let init_kont exp = exp
 
 let find_spec =
-  (* FAILWITH is a special instruction which generates nothing and not in test/inst.mli *)
-  let v = ("failwith", (1, 0)) ::  InstSpec.v in
   (* the instruction name maybe a keyword, in which case an underscore
      is added to the function name in test/inst.mli *)
-  fun s -> try (s, List.assoc s v) with
-           | Not_found -> let s = s ^ "_" in (s, List.assoc s v)
+  fun s -> try (s, List.assoc s InstSpec.v) with
+           | Not_found -> let s = s ^ "_" in (s, List.assoc s InstSpec.v)
+
 
 (* translator exp_of_prog
  kont represents instructions already processed *)
 let rec exp_of_prog kont = function
-  | [], vars -> (kont, vars)
+  | [], vars -> (kont, Some vars)
   | SimpleArgCon ("PUSH", c) :: rest, vars ->
      let var0 = newVar() in
      exp_of_prog
        (fun exp ->
          kont (let_ [var0] c exp))
        (rest, var0 :: vars)
+  (* FAILWITH is a special instruction *)
+  | Simple "FAILWITH" :: rest, var0 :: vars ->
+     ((fun exp -> kont (call "failwith" [var0])), None)
   (* DUP duplicates name of the nth element of the stack *)
   | Simple "DUP" :: rest, vars ->
      exp_of_prog kont (SimpleWithNum ("DUP", 1) :: rest, vars)
@@ -136,16 +138,21 @@ let rec exp_of_prog kont = function
      else
        let protected, restvars = take n vars, drop n vars in
        let kont_body, final_vars = exp_of_prog init_kont (is, restvars) in
-       (* DEBUG *)
-       prerr_string ("INIT: "^string_of_ids vars); prerr_newline();
-       prerr_string ("FINAL: "^string_of_ids final_vars); prerr_newline();
-       (* DEBUG END *)
-       let newvars = diff final_vars restvars in
-       exp_of_prog
-         (fun exp -> kont (let_ newvars
-                             (kont_body (exp_of_tuple_vars newvars))
-                             exp))
-         (rest, protected @ final_vars)
+       begin match final_vars with
+       | None -> ((fun exp -> kont (kont_body exp)), None)
+       | Some final_vars ->
+          (* DEBUG *)
+          prerr_string ("INIT: "^string_of_ids vars); prerr_newline();
+          prerr_string ("FINAL: "^string_of_ids final_vars); prerr_newline();
+          (* DEBUG END *)
+          let newvars = diff final_vars restvars in
+          let num_newvars = (List.length newvars) in
+          let newvars' = newVars num_newvars in
+          exp_of_prog
+            (fun exp -> kont (let_ newvars'
+                                (kont_body (exp_of_tuple_vars newvars))
+                                exp))
+            (rest, protected @ newvars' @ drop num_newvars final_vars) end
   (* DIG *)
   | SimpleWithNum ("DIG", n) :: rest, vars ->
      (* DEBUG *)
@@ -160,62 +167,24 @@ let rec exp_of_prog kont = function
      (* DEBUG *)
      assert(n >= 0 && List.length vars >= n);
      exp_of_prog kont (rest, take n vars @ var1 :: drop n vars)
+  (* branching instructions *)
   | TwoBlocks ("IF_LEFT", is1, is2) :: rest, var0 :: vars ->
      let var1 = newVar () in
      let kont_body1, final_vars1 = exp_of_prog init_kont (is1, var1::vars) in
      let var2 = newVar () in
      let kont_body2, final_vars2 = exp_of_prog init_kont (is2, var2::vars) in
-     let newvars1 = diff final_vars1 (var1::vars) in
-     let newvars2 = diff final_vars2 (var2::vars) in
-     let num_newvars = (max (List.length newvars1) (List.length newvars2)) in
-     let newvars = newVars num_newvars in
-     let newvars1 = take num_newvars final_vars1 in
-     let newvars2 = take num_newvars final_vars2 in
-     exp_of_prog
-       (fun exp -> kont (let_ newvars
-                           (ifleft (exp_of_var var0)
-                              var1 (kont_body1 (exp_of_tuple_vars newvars1))
-                              var2 (kont_body2 (exp_of_tuple_vars newvars2)))
-                           exp))
-       (rest, newvars @ drop num_newvars final_vars1)
+     gen_branch kont rest var0 vars kont_body1 final_vars1 kont_body2 final_vars2
+       (fun exp0 exp1 exp2 -> ifleft exp0 var1 exp1 var2 exp2)
   | TwoBlocks ("IF", is1, is2) :: rest, var0 :: vars ->
      let kont_body1, final_vars1 = exp_of_prog init_kont (is1, vars) in
      let kont_body2, final_vars2 = exp_of_prog init_kont (is2, vars) in
-     let newvars1 = diff final_vars1 vars in
-     let newvars2 = diff final_vars2 vars in
-     (* DEBUG *)
-     prerr_string ("IF INIT: "^string_of_ids (var0::vars)); prerr_newline();
-     prerr_string ("If BRANCH1: "^string_of_ids final_vars1); prerr_newline();
-     prerr_string ("If BRANCH2: "^string_of_ids final_vars2); prerr_newline();
-     (* DEBUG END *)
-     let num_newvars = (max (List.length newvars1) (List.length newvars2)) in
-     let newvars = newVars num_newvars in
-     let newvars1 = take num_newvars final_vars1 in
-     let newvars2 = take num_newvars final_vars2 in
-     exp_of_prog
-       (fun exp -> kont (let_ newvars
-                           (if_ (exp_of_var var0)
-                              (kont_body1 (exp_of_tuple_vars newvars1))
-                              (kont_body2 (exp_of_tuple_vars newvars2)))
-                           exp))
-       (rest, newvars @ drop num_newvars final_vars1)
+     gen_branch kont rest var0 vars kont_body1 final_vars1 kont_body2 final_vars2 if_
   | TwoBlocks ("IF_NONE", is1, is2) :: rest, var0 :: vars ->
      let kont_body1, final_vars1 = exp_of_prog init_kont (is1, vars) in
      let var2 = newVar () in
      let kont_body2, final_vars2 = exp_of_prog init_kont (is2, var2::vars) in
-     let newvars1 = diff final_vars1 vars in
-     let newvars2 = diff final_vars2 vars in
-     let num_newvars = (max (List.length newvars1) (List.length newvars2)) in
-     let newvars = newVars num_newvars in
-     let newvars1 = take num_newvars final_vars1 in
-     let newvars2 = take num_newvars final_vars2 in
-     exp_of_prog
-       (fun exp -> kont (let_ newvars
-                           (ifnone (exp_of_var var0)
-                              (kont_body1 (exp_of_tuple_vars newvars1))
-                              var2 (kont_body2 (exp_of_tuple_vars newvars2)))
-                           exp))
-       (rest, newvars @ drop num_newvars final_vars1)
+     gen_branch kont rest var0 vars kont_body1 final_vars1 kont_body2 final_vars2
+       (fun exp0 exp1 exp2 -> ifnone exp0 exp1 var2 exp2)
   (* DROP *)
   | Simple "DROP" :: rest, vars -> exp_of_prog kont (SimpleWithNum ("DROP", 1) :: rest, vars)
   | SimpleWithNum ("DROP", n) :: rest, vars ->
@@ -237,9 +206,58 @@ let rec exp_of_prog kont = function
           (rest, produced_vars @ untouched_vars)
      with Not_found -> failwith ("Instruction not implemented: " ^ s)
      end
-
+  and gen_branch kont rest var0 vars kont_body1 final_vars1 kont_body2 final_vars2 branch =
+  match final_vars1, final_vars2 with
+  | None, None ->
+     ((fun exp -> kont (branch (exp_of_var var0)
+                          (kont_body1 (exp_of_tuple_vars []))
+                          (kont_body2 (exp_of_tuple_vars [])))),
+      None)
+  | Some final_vars1, None ->
+     let newvars1 = diff final_vars1 vars in
+     let num_newvars = List.length newvars1 in
+     let newvars = newVars num_newvars in
+     exp_of_prog
+       (fun exp -> kont (let_ newvars
+                           (branch (exp_of_var var0)
+                              (kont_body1 (exp_of_tuple_vars newvars1))
+                              (kont_body2 (exp_of_tuple_vars [])))
+                           exp))
+       (rest, newvars @ drop num_newvars final_vars1)
+  | None, Some final_vars2 ->
+     let newvars2 = diff final_vars2 vars in
+     let num_newvars = List.length newvars2 in
+     let newvars = newVars num_newvars in
+     exp_of_prog
+       (fun exp -> kont (let_ newvars
+                           (branch (exp_of_var var0)
+                              (kont_body1 (exp_of_tuple_vars []))
+                              (kont_body2 (exp_of_tuple_vars newvars2)))
+                           exp))
+       (rest, newvars @ drop num_newvars final_vars2)
+  | Some final_vars1, Some final_vars2 ->
+     let newvars1 = diff final_vars1 vars in
+     let newvars2 = diff final_vars2 vars in
+     (* DEBUG *)
+     prerr_string ("IF INIT: "^string_of_ids (var0::vars)); prerr_newline();
+     prerr_string ("If BRANCH1: "^string_of_ids final_vars1); prerr_newline();
+     prerr_string ("If BRANCH2: "^string_of_ids final_vars2); prerr_newline();
+     (* DEBUG END *)
+     let num_newvars = (max (List.length newvars1) (List.length newvars2)) in
+     let newvars = newVars num_newvars in
+     let newvars1 = take num_newvars final_vars1 in
+     let newvars2 = take num_newvars final_vars2 in
+     exp_of_prog
+       (fun exp -> kont (let_ newvars
+                           (branch (exp_of_var var0)
+                              (kont_body1 (exp_of_tuple_vars newvars1))
+                              (kont_body2 (exp_of_tuple_vars newvars2)))
+                           exp))
+       (rest, newvars @ drop num_newvars final_vars1)
+    
 let exp_of_code (Code body) =
   let kont, ids = exp_of_prog init_kont (body, ["param_st"]) in
   match ids with
-    [] -> failwith "exp_of_code: Stack is empty!"
-  | x :: _ -> kont (exp_of_tuple_vars [x])
+    Some [] -> failwith "exp_of_code: Stack is empty!"
+  | Some (x :: _) -> kont (exp_of_tuple_vars [x])
+  | None -> kont (exp_of_tuple_vars [])
