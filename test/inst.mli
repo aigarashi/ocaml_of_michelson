@@ -1,6 +1,7 @@
 type ('a, 'b) or_ = Left of 'a | Right of 'b
 type never
 type 'a set
+type ('a, 'b) pair = 'a * 'b
 type ('k, 't) map
 type ('k, 't) big_map = ('k, 't) map
 
@@ -13,7 +14,7 @@ val lt : int -> bool
 val neq : int -> bool
 
 (* operations on unit *)
-val unit : unit -> unit
+val unit : unit
 val compare : 'a -> 'a -> int
 
 (* operations on booleans *)
@@ -46,14 +47,29 @@ val slice : nat -> nat -> string -> string option
 (* Operations on pairs and right combs *)
 val car : 'a * 'b -> 'a
 val cdr : 'a * 'b -> 'b
+val pair : 'a -> 'b -> ('a, 'b) pair
+val unpair : ('a, 'b) pair -> 'a * 'b
 
 (* Operations on big_maps *)
-val empty_big_map : unit -> ('k, 'v) big_map
+val empty_big_map : ('k, 'v) big_map
 val get : 'k -> ('k, 'v) big_map -> 'v option
 val mem : 'k -> ('k, 'v) big_map -> bool
 val update : 'k -> 'v option -> ('k, 'v) big_map -> ('k, 'v) big_map
 (* instructions returning multiple values are not supported yet *)
 val get_and_update :  'k -> 'v option -> ('k, 'v) big_map -> 'v option * ('k, 'v) big_map
+
+(* Operations on optional values *)
+val some : 'a -> 'a option
+val none : 'a option
+
+(* Operations on unions *)
+val left : 'a -> ('a, 'b) or_
+val right : 'b -> ('a, 'b) or_
+
+(* Operations on lists *)
+val cons : 'a -> 'a list -> 'a list
+val nil : 'a list
+val size : 'a list -> nat
 
 (* Domain specific data types *)
 type timestamp = int (* for simplicity *)
@@ -76,20 +92,20 @@ ticket (t)
 
 val transfer_tokens : 'a -> mutez -> 'a contract -> operation
 val set_delegate : key_hash option -> operation
-val balance : unit -> mutez
+val balance : mutez
 val address : 'a contract -> address
 val contract : address -> 'a contract option
-val source : unit -> address
-val sender : unit -> address
-val self : unit -> 'a contract
-val self_address : unit -> address
-val amount : unit -> mutez
+val source : address
+val sender : address
+val self : 'a contract
+val self_address : address
+val amount : mutez
 val implicit_account : key_hash -> unit contract
 val voting_power : key_hash -> nat
-val now : unit -> timestamp
-val chain_id : unit -> chain_id
-val level : unit -> nat
-val total_voting_power : unit -> nat
+val now : timestamp
+val chain_id : chain_id
+val level : nat
+val total_voting_power : nat
 
 (* operations on bytes *)
 type bytes
