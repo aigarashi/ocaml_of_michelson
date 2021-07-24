@@ -5,6 +5,8 @@ type ('a, 'b) pair = 'a * 'b
 type ('k, 't) map
 type ('k, 't) big_map = ('k, 't) map
 
+val failwith : 'a -> 'b
+
 (* generic comparison *)
 val eq : int -> bool
 val ge : int -> bool
@@ -49,6 +51,9 @@ val car : 'a * 'b -> 'a
 val cdr : 'a * 'b -> 'b
 val pair : 'a -> 'b -> ('a, 'b) pair
 val unpair : ('a, 'b) pair -> 'a * 'b
+
+(* Operations on maps *)
+val empty_map : ('k, 'v) map
 
 (* Operations on big_maps *)
 val empty_big_map : ('k, 'v) big_map
