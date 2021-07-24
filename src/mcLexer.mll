@@ -17,6 +17,9 @@ rule main = parse
 | ";" { McParser.SEMI }
 
 | "code" { McParser.CODE }
+| "True" { McParser.BOOL true }
+| "False" { McParser.BOOL false }
+
 | ['A'-'Z' '_' ]+
     { McParser.MNEMONIC (Lexing.lexeme lexbuf) }
 | ['a'-'z']+
