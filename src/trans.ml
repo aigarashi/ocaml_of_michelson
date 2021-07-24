@@ -238,11 +238,6 @@ let rec exp_of_prog kont = function
   | Some final_vars1, Some final_vars2 ->
      let newvars1 = diff final_vars1 vars in
      let newvars2 = diff final_vars2 vars in
-     (* DEBUG *)
-     prerr_string ("IF INIT: "^string_of_ids (var0::vars)); prerr_newline();
-     prerr_string ("If BRANCH1: "^string_of_ids final_vars1); prerr_newline();
-     prerr_string ("If BRANCH2: "^string_of_ids final_vars2); prerr_newline();
-     (* DEBUG END *)
      let num_newvars = (max (List.length newvars1) (List.length newvars2)) in
      let newvars = newVars num_newvars in
      let newvars1 = take num_newvars final_vars1 in
