@@ -3,7 +3,7 @@
     open Ast_helper
 %}
 
-%token CODE LBRACE RBRACE SEMI EOF
+%token CODE LPAREN RPAREN LBRACE RBRACE SEMI EOF
 
 %token <string> INTV
 %token <bool> BOOL
@@ -18,13 +18,20 @@
 toplevel :
     CODE LBRACE is=InstList RBRACE EOF { Code is }
 
+Ty :
+    LCID { () }
+  | LPAREN Tys RPAREN { () }
+Tys :
+    Ty { () }
+  | Ty Tys { () }
+
 SingleInst :
   | m=MNEMONIC { Simple m }
-  | m=MNEMONIC ty=LCID { SimpleArg1 (m, ty) }
-  | m=MNEMONIC ty1=LCID ty2=LCID { SimpleArgTyTy (m, ty1, ty2) }
-  | m=MNEMONIC ty=LCID s=STR { SimpleArg2 (m, ty, Exp.constant (Pconst_string (s, Location.none, None))) }
-  | m=MNEMONIC ty=LCID i=INTV { SimpleArg2 (m, ty, Exp.constant (Pconst_integer (i, None))) }
-  | m=MNEMONIC ty=LCID b=BOOL { SimpleArg2 (m, ty, Exp.construct (Location.mknoloc (Longident.Lident (string_of_bool b))) None) }
+  | m=MNEMONIC Ty { Simple m }
+  | m=MNEMONIC Ty Ty { Simple m }
+  | m=MNEMONIC Ty s=STR { SimpleArgCon (m, Exp.constant (Pconst_string (s, Location.none, None))) }
+  | m=MNEMONIC Ty i=INTV { SimpleArgCon (m, Exp.constant (Pconst_integer (i, None))) }
+  | m=MNEMONIC Ty b=BOOL { SimpleArgCon (m, Exp.construct (Location.mknoloc (Longident.Lident (string_of_bool b))) None) }
   | m=MNEMONIC i=INTV { SimpleWithNum (m, int_of_string i) }
   | m=MNEMONIC LBRACE is=InstList RBRACE { OneBlock (m, is) }
   | m=MNEMONIC i=INTV LBRACE is=InstList RBRACE { OneBlockWithNum (m, int_of_string i, is) }

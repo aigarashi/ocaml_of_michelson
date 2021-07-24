@@ -7,11 +7,13 @@ let reservedWords = [
 rule main = parse
   (* ignore spacing and newline characters *)
   [' ' '\009' '\012' '\n']+     { main lexbuf }
-| '%' ['A'-'Z' 'a'-'z']+  { main lexbuf }
+| "%" ['A'-'Z' 'a'-'z']+  { main lexbuf }
 
 | ['0'-'9']+
     { McParser.INTV (Lexing.lexeme lexbuf) }
 
+| "(" { McParser.LPAREN }
+| ")" { McParser.RPAREN }
 | "{" { McParser.LBRACE }
 | "}" { McParser.RBRACE }
 | ";" { McParser.SEMI }
@@ -29,3 +31,4 @@ rule main = parse
        McParser.STR (String.sub lexeme 1 (String.length lexeme - 2))
     }
 | eof { EOF }
+| _ { prerr_string "Lexer: Unknown character: "; prerr_string (Lexing.lexeme lexbuf); exit 0 }

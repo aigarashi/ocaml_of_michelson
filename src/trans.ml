@@ -104,7 +104,7 @@ let find_spec =
  kont represents instructions already processed *)
 let rec exp_of_prog kont = function
   | [], vars -> (kont, vars)
-  | SimpleArg2 ("PUSH", ty, c) :: rest, vars ->
+  | SimpleArgCon ("PUSH", c) :: rest, vars ->
      let var0 = newVar() in
      exp_of_prog
        (fun exp ->
