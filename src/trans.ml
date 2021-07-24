@@ -40,8 +40,10 @@ let let_ ids rhs body =
     body
 
 let call id ids =
-  Exp.apply (exp_of_var id)
-    (List.map (fun id -> Asttypes.Nolabel, exp_of_var id) ids)
+  match ids with
+    [] -> exp_of_var id
+  | _ -> Exp.apply (exp_of_var id)
+           (List.map (fun id -> Asttypes.Nolabel, exp_of_var id) ids)
 
 let ifleft exp0 var1 exp1 var2 exp2 =
   Exp.match_ exp0
