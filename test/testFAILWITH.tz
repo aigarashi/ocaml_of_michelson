@@ -1,0 +1,1 @@
+code { DUP; IF {} { PUSH string "error"; FAILWITH } }
