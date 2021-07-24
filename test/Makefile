@@ -3,11 +3,14 @@ OM := ../src/ocaml_of_michelson
 SRCS := $(wildcard *.tz)
 OBJS := $(patsubst %.tz, %.ml,$(SRCS))
 
-all: $(OBJS)
+all: inst.cmi $(OBJS)
+
+inst.cmi : inst.mli
+	ocamlopt -c $<
 
 %.ml: %.tz
 	$(OM) < $< > $@
-	ocamlopt -i -o a.out $@
+	ocamlopt -i $@
 
 clean:
-	@rm -rf $(OBJS) *~
+	@rm -rf $(OBJS) inst.cmi *~
