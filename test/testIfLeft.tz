@@ -1,1 +1,1 @@
-code { DUP; CAR; IF_LEFT { DUP; PLUS; DUP } { DUP; DUP; MULT } }
+code { DUP; CAR; IF_LEFT { DUP; ADD; DUP } { DUP; DUP; MUL } }

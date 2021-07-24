@@ -3,8 +3,6 @@ type never
 
 val car : 'a * 'b -> 'a
 val cdr : 'a * 'b -> 'b
-val plus : int -> int -> int
-val mult : int -> int -> int
 
 (* generic comparison *)
 val eq : int -> bool
@@ -19,5 +17,18 @@ val unit : unit -> unit
 val compare : 'a -> 'a -> bool
 
 (* operations on booleans *)
-val or_ : bool -> bool -> bool (* keyword! *)
-val and_ : bool -> bool -> bool (* keyword! *)
+val or_ : bool -> bool -> bool (* 'or' is an OCaml keyword! *)
+val and_ : bool -> bool -> bool (* 'and' is an OCaml keyword! *)
+val xor : bool -> bool -> bool
+val not : bool -> bool
+
+(* operations on integers and natural numbers *)
+(* int and nat are identified *)
+val neg : int -> int
+val abs : int -> int
+val isnat : int -> int option
+val int : int -> int
+val add : int -> int -> int
+val sub : int -> int -> int
+val mul : int -> int -> int
+val ediv : int -> int -> (int * int) option

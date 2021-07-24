@@ -1,1 +1,1 @@
-code { DUP; DUP; CAR; SWAP; CDR; IF_NONE {} { PLUS }}
+code { DUP; DUP; CAR; SWAP; CDR; IF_NONE {} { ADD }}

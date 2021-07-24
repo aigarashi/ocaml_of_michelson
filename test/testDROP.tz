@@ -1,1 +1,1 @@
-code { DUP; DUP; PLUS; SWAP; DROP; DUP; PLUS }
+code { DUP; DUP; ADD; SWAP; DROP; DUP; ADD }
