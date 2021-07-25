@@ -86,12 +86,12 @@ type key
 type key_hash
 type signature
 type chain_id
-type bls12_381_g1
-type bls12_381_g2
-type bls12_381_fr
-(* 
-sapling_transaction ms: A Sapling transaction
-sapling_state ms: A Sapling state
+type bls12_381_g1 = int
+type bls12_381_g2 = int
+type bls12_381_fr = int
+type 'a sapling_transaction
+type 'a sapling_state
+(*
 ticket (t)
  *)
 
@@ -113,8 +113,31 @@ val level : nat
 val total_voting_power : nat
 
 (* operations on bytes *)
-type bytes
+type bytes = string
+val pack : 'a -> bytes
+val unpack : bytes -> 'a option
+(* concat, size, slice, compare are overleaded *)
 
 (* Cryptographic primitives *)
 val hash_key : key -> key_hash
 val blake2b : bytes -> bytes
+val keccak : bytes -> bytes
+val sha256 : bytes -> bytes
+val sha512 : bytes -> bytes
+val sha3 : bytes -> bytes
+val check_siganture : key -> signature -> bytes -> bool
+
+(* BLS12-381 primitives *)
+(* neg, add, mul, int are overloaded *)
+val paring_check : (bls12_381_g1, bls12_381_g2) pair list -> bool
+
+(* Sapling operations *)
+val sapling_verify_update : 'a sapling_transaction -> 'a sapling_state 'a -> (int, 'a sapling_state) pair option
+val sapling_empty_state : 'a sapling_state
+
+(* Operations on tickets *)
+val ticket : 'a -> nat -> 'a ticket
+val read_ticket : 'a ticket -> ('a address, nat) pair * 'a ticket
+val split_ticket : 'a ticket -> (nat, nat) pair -> ('a ticket, 'a ticket) pair option
+val join_ticket : ('a ticket, 'a ticket) pair -> 'a ticket option
+
