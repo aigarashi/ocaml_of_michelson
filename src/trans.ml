@@ -72,6 +72,20 @@ let ifnone exp0 exp1 var2 exp2 =
         exp2
     ]
 
+let ifcons exp0 var11 var12 exp1 exp2 =
+  Exp.match_ exp0
+    [ Exp.case
+        (Pat.construct
+           (Location.mknoloc (Longident.Lident "::"))
+           (Some (Pat.tuple [pat_of_var var11; pat_of_var var12])))
+        exp1 ;
+      Exp.case
+        (Pat.construct
+           (Location.mknoloc (Longident.Lident "[]")) None)
+        exp2
+    ]
+
+
 let if_ exp0 exp1 exp2 =
   Exp.ifthenelse exp0 exp1 (Some exp2)
 
@@ -187,6 +201,12 @@ let rec exp_of_prog kont = function
      let kont_body2, final_vars2 = exp_of_prog init_kont (is2, var2::vars) in
      gen_branch kont rest var0 vars kont_body1 final_vars1 kont_body2 final_vars2
        (fun exp0 exp1 exp2 -> ifnone exp0 exp1 var2 exp2)
+  | TwoBlocks ("IF_CONS", is1, is2) :: rest, var0 :: vars ->
+     let var11 = newVar () and var12 = newVar() in
+     let kont_body1, final_vars1 = exp_of_prog init_kont (is1, var11::var12::vars) in
+     let kont_body2, final_vars2 = exp_of_prog init_kont (is2, vars) in
+     gen_branch kont rest var0 vars kont_body1 final_vars1 kont_body2 final_vars2
+       (fun exp0 exp1 exp2 -> ifcons exp0 var11 var12 exp1 exp2)
   (* DROP *)
   | Simple "DROP" :: rest, vars -> exp_of_prog kont (SimpleWithNum ("DROP", 1) :: rest, vars)
   | SimpleWithNum ("DROP", n) :: rest, vars ->
