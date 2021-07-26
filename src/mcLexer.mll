@@ -27,7 +27,7 @@ rule main = parse
 
 | ['A'-'Z' '_' ]+
     { McParser.MNEMONIC (Lexing.lexeme lexbuf) }
-| ['a'-'z']+
+| ['a'-'z' '_' ]+
     { McParser.LCID (Lexing.lexeme lexbuf) }
 | '"' (_ # '"')* '"'
     { let lexeme = Lexing.lexeme lexbuf in

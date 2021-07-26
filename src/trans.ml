@@ -222,8 +222,8 @@ let exp_of_code (Code (optty, body)) =
   let body =
     match optty with
     | None -> body
-    | Some (_, st_ty) -> Exp.constraint_ body (Typ.tuple [Typ.constr (Location.mknoloc (Longident.Lident "list"))
-                                                            [Typ.constr (Location.mknoloc (Longident.Lident "operation")) []];
+    | Some (_, st_ty) -> Exp.constraint_ body (Typ.tuple [Typ.constr (Location.mknoloc (Longident.Lident "list_"))
+                                                            [Typ.constr (Location.mknoloc (Longident.Lident "operation_")) []];
                                                           st_ty]) in
   let param =
     match optty with
