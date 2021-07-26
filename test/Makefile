@@ -8,8 +8,8 @@ all: $(OBJS)
 inst.cmi : inst.mli
 	ocamlopt -c $<
 
-%.ml: inst.cmi %.tz
-	grep '^code' -A -1 $< | $(OM) > $@
+%.ml: %.tz inst.cmi
+	sed -n '/^code/,$$p' < $< | $(OM) > $@
 	ocamlopt -i $@
 
 clean:

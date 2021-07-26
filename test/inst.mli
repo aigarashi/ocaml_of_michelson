@@ -91,9 +91,7 @@ type bls12_381_g2 = int
 type bls12_381_fr = int
 type 'a sapling_transaction
 type 'a sapling_state
-(*
-ticket (t)
- *)
+type 'a ticket
 
 val transfer_tokens : 'a -> mutez -> 'a contract -> operation
 val set_delegate : key_hash option -> operation
@@ -132,12 +130,12 @@ val check_siganture : key -> signature -> bytes -> bool
 val paring_check : (bls12_381_g1, bls12_381_g2) pair list -> bool
 
 (* Sapling operations *)
-val sapling_verify_update : 'a sapling_transaction -> 'a sapling_state 'a -> (int, 'a sapling_state) pair option
+val sapling_verify_update : 'a sapling_transaction -> 'a sapling_state -> (int, 'a sapling_state) pair option
 val sapling_empty_state : 'a sapling_state
 
 (* Operations on tickets *)
 val ticket : 'a -> nat -> 'a ticket
-val read_ticket : 'a ticket -> ('a address, nat) pair * 'a ticket
+val read_ticket : 'a ticket -> ('a, nat) pair * 'a ticket
 val split_ticket : 'a ticket -> (nat, nat) pair -> ('a ticket, 'a ticket) pair option
 val join_ticket : ('a ticket, 'a ticket) pair -> 'a ticket option
 
