@@ -37,3 +37,17 @@ let linear_mapper =
 
 let linear exp =
   linear_mapper.expr linear_mapper exp
+
+let remove_trivial_let_mapper =
+  { default_mapper with
+    expr = fun mapper expr ->
+           match expr with
+           | { pexp_desc =
+                 Pexp_let (Nonrecursive,
+                           [{pvb_pat = {ppat_desc = Ppat_tuple []};
+                             pvb_expr ={pexp_desc = Pexp_tuple []};}],
+                           body) } -> body
+           | other -> default_mapper.expr mapper other }
+
+let remove_trivial_let exp =
+  remove_trivial_let_mapper.expr remove_trivial_let_mapper exp
