@@ -7,7 +7,7 @@ let reservedWords = [
 rule main = parse
   (* ignore spacing and newline characters *)
   [' ' '\009' '\012' '\n']+     { main lexbuf }
-| "%" ['A'-'Z' 'a'-'z' '_']+  { main lexbuf }
+| ['%' ':'] ['A'-'Z' 'a'-'z' '_']+  { main lexbuf }
 | '#' (_ # '\n')* '\n' { main lexbuf }
 
 | ['0'-'9']+
