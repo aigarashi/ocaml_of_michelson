@@ -161,14 +161,20 @@ let rec exp_of_prog kont = function
           prerr_string ("INIT: "^string_of_ids vars); prerr_newline();
           prerr_string ("FINAL: "^string_of_ids final_vars); prerr_newline();
           (* DEBUG END *)
-          let newvars = diff final_vars restvars in
-          let num_newvars = (List.length newvars) in
-          let newvars' = newVars num_newvars in
+          let rec aux = function (* replace newly introduced vars in finalvars with fresh vars for the continuation *)
+            | [] -> [], [], []
+            | id :: rest_final_vars ->
+               let freshvars, newvars, updated_final_vars = aux rest_final_vars in
+               if List.mem id vars then freshvars, newvars, id::updated_final_vars
+               else
+                 let freshvar = newVar () in
+                 freshvar :: freshvars, id :: newvars, freshvar :: updated_final_vars           in
+          let freshvars, newvars, updated_final_vars = aux final_vars in
           exp_of_prog
-            (fun exp -> kont (let_ newvars'
+            (fun exp -> kont (let_ freshvars
                                 (kont_body (exp_of_tuple_vars newvars))
                                 exp))
-            (rest, protected @ newvars' @ drop num_newvars final_vars) end
+            (rest, protected @ updated_final_vars) end
   (* DIG *)
   | SimpleWithNum ("DIG", n) :: rest, vars ->
      (* DEBUG *)
