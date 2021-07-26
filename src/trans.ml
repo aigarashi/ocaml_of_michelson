@@ -48,6 +48,9 @@ let find_spec =
  kont represents instructions already processed *)
 let rec exp_of_prog kont = function
   | [], vars -> (kont, Some vars)
+  (* CAST is no-op *)
+  | Simple "CAST" :: rest, vars -> exp_of_prog kont (rest, vars)
+  (* PUSH *)
   | SimpleArgCon ("PUSH", c) :: rest, vars ->
      let var0 = newVar() in
      exp_of_prog
