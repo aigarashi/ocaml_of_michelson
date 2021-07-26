@@ -6,6 +6,7 @@ let rec read_eval_print () =
   let exp = exp_of_code code in
   print_string "open Inst\n";
   print_string "let main param_st =\n";
+  prerr_string (Pprintast.string_of_expression exp);
   print_string (Pprintast.string_of_expression (Inliner.linear exp));
   print_newline ()
 
