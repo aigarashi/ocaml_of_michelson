@@ -1,1 +1,1 @@
-code { DUP; IF_CONS { ADD; ADD } {} }
+code { DUP; IF_CONS { DUP; ADD; SWAP; DROP } { DROP; PUSH int 0 } }
