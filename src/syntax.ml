@@ -9,5 +9,5 @@ type inst =
   | TwoBlocks of string * inst list * inst list  (* such IF code1 code 2 *)
 
 type program = 
-    Code of inst list
+    Code of (Parsetree.core_type * Parsetree.core_type) option * inst list
 

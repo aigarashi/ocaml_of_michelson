@@ -31,7 +31,7 @@ let linear_mapper =
               let inlined_e = mapper.expr mapper e in
               begin
                 try subst id inlined_e inlined_body with
-                  NonLinear -> Trans.let_ [id] inlined_e (mapper.expr mapper inlined_body)
+                  NonLinear -> MySupport.let_ [id] inlined_e (mapper.expr mapper inlined_body)
               end
            | other -> default_mapper.expr mapper other }
 

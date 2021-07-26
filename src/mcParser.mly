@@ -3,7 +3,7 @@
     open Ast_helper
 %}
 
-%token CODE LPAREN RPAREN LBRACE RBRACE SEMI EOF
+%token PARAM STORAGE CODE LPAREN RPAREN LBRACE RBRACE SEMI EOF
 
 %token <string> INTV
 %token <bool> BOOL
@@ -16,14 +16,17 @@
 %%
 
 toplevel :
-    CODE LBRACE is=InstList RBRACE EOF { Code is }
+  | CODE LBRACE is=InstList RBRACE EOF { Code (None, is) }
+  | PARAM pty=Ty SEMI STORAGE stty=Ty SEMI CODE LBRACE is=InstList RBRACE EOF { Code (Some (pty, stty), is) }
 
 Ty :
-    LCID { () }
-  | LPAREN Tys RPAREN { () }
+    ty=LCID { Typ.constr (Location.mknoloc (Longident.Lident ty)) [] }
+  | LPAREN ty=LCID tys=Tys RPAREN {
+      Typ.constr (Location.mknoloc (Longident.Lident ty)) tys
+    }
 Tys :
-    Ty { () }
-  | Ty Tys { () }
+    /* empty */ { [] }
+  | ty=Ty tys=Tys { ty::tys }
 
 SingleInst :
   | m=MNEMONIC { Simple m }

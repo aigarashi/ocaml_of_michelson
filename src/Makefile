@@ -11,7 +11,7 @@ OCAMLOPTFLAGS=$(INCLUDES) # add other options for ocamlopt here
 PROGNAME=ocaml_of_michelson
 
 # The list of object files for prog1
-OBJS=syntax.cmx mcParser.cmx mcLexer.cmx instSpec.cmx trans.cmx inliner.cmx main.cmx
+OBJS=syntax.cmx mySupport.cmx mcParser.cmx mcLexer.cmx instSpec.cmx inliner.cmx trans.cmx main.cmx
 
 DEPEND += mcLexer.ml mcParser.ml
 

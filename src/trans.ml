@@ -1,4 +1,5 @@
 open Syntax
+open MySupport
 open Ast_helper
 
 let newVar =
@@ -16,78 +17,6 @@ let rec take n l =
 let rec drop n l =
   if n = 0 then l
   else match l with [] -> failwith "Take" | h :: t -> drop (n-1) t
-
-(* Auxiliary functions to build AST *)
-let exp_of_var id =
-  Exp.ident (Location.mknoloc (Longident.Lident id))
-
-let pat_of_var id = Pat.var (Location.mknoloc id)
-
-let exp_of_tuple_vars = function
-  | [id] -> exp_of_var id
-  | ids -> Exp.tuple (List.map (fun id -> exp_of_var id) ids)
-
-let pat_of_tuple_vars = function
-  | [id] -> pat_of_var id
-  | ids -> Pat.tuple (List.map (fun id -> pat_of_var id) ids)
-
-let let_ ids rhs body =
-  Exp.let_ Asttypes.Nonrecursive
-    [ { pvb_pat  = pat_of_tuple_vars ids;
-        pvb_expr = rhs;
-        pvb_attributes = [];
-       pvb_loc = Location.none } ]
-    body
-
-let call id ids =
-  match ids with
-    [] -> exp_of_var id
-  | _ -> Exp.apply (exp_of_var id)
-           (List.map (fun id -> Asttypes.Nolabel, exp_of_var id) ids)
-
-let ifleft exp0 var1 exp1 var2 exp2 =
-  Exp.match_ exp0
-    [ Exp.case
-        (Pat.construct
-           (Location.mknoloc (Longident.Lident "Left"))
-           (Some (pat_of_var var1)))
-        exp1
-    ; Exp.case
-        (Pat.construct
-           (Location.mknoloc (Longident.Lident "Right"))
-           (Some (pat_of_var var2)))
-        exp2
-    ]
-
-let ifnone exp0 exp1 var2 exp2 =
-  Exp.match_ exp0
-    [ Exp.case
-        (Pat.construct
-           (Location.mknoloc (Longident.Lident "None")) None)
-        exp1
-    ; Exp.case
-        (Pat.construct
-           (Location.mknoloc (Longident.Lident "Some"))
-           (Some (pat_of_var var2)))
-        exp2
-    ]
-
-let ifcons exp0 var11 var12 exp1 exp2 =
-  Exp.match_ exp0
-    [ Exp.case
-        (Pat.construct
-           (Location.mknoloc (Longident.Lident "::"))
-           (Some (Pat.tuple [pat_of_var var11; pat_of_var var12])))
-        exp1 ;
-      Exp.case
-        (Pat.construct
-           (Location.mknoloc (Longident.Lident "[]")) None)
-        exp2
-    ]
-
-
-let if_ exp0 exp1 exp2 =
-  Exp.ifthenelse exp0 exp1 (Some exp2)
 
 (* pretty printing *)
 let rec string_of_ids = function
@@ -278,9 +207,30 @@ let rec exp_of_prog kont = function
                            exp))
        (rest, newvars @ drop num_newvars final_vars1)
     
-let exp_of_code (Code body) =
+let exp_of_code (Code (optty, body)) =
   let kont, ids = exp_of_prog init_kont (body, ["param_st"]) in
-  match ids with
-    Some [] -> failwith "exp_of_code: Stack is empty!"
-  | Some (x :: _) -> kont (exp_of_tuple_vars [x])
-  | None -> kont (exp_of_tuple_vars [])
+  let body =
+    Inliner.remove_trivial_let
+      (Inliner.linear
+         (match ids with
+         | Some [] -> failwith "exp_of_code: Stack is empty!"
+         | Some (x :: _) -> kont (exp_of_tuple_vars [x])
+         | None -> kont (exp_of_tuple_vars []))) in
+  let body =
+    match optty with
+    | None -> body
+    | Some (_, st_ty) -> Exp.constraint_ body (Typ.tuple [Typ.constr (Location.mknoloc (Longident.Lident "list"))
+                                                            [Typ.constr (Location.mknoloc (Longident.Lident "operation")) []];
+                                                          st_ty]) in
+  let param =
+    match optty with
+      None -> pat_of_var "param_st"
+    | Some (param_ty, st_ty) ->
+       Pat.constraint_ (pat_of_var "param_st") (Typ.tuple [param_ty; st_ty])
+  in
+  Str.value Asttypes.Nonrecursive
+    [{ pvb_pat = pat_of_var "main";
+       pvb_expr = Exp.fun_ Asttypes.Nolabel None param body;
+       pvb_attributes = [];
+       pvb_loc = Location.none } ]
+

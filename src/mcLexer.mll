@@ -20,6 +20,8 @@ rule main = parse
 | ";" { McParser.SEMI }
 
 | "code" { McParser.CODE }
+| "parameter" { McParser.PARAM }
+| "storage" { McParser.STORAGE }
 | "True" { McParser.BOOL true }
 | "False" { McParser.BOOL false }
 
