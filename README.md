@@ -24,15 +24,16 @@ ocaml_of_michelson
 ```
 (There is no available option.)
 
-It reads a Michelson script from stdin.  Currently, the input has to
-be the code section of a Michelson script (`code { ... }`); so
-the type declarations of parameter and storage should be removed in advance.
+It reads a Michelson script from stdin.
 The output is written to stdout and debug messages are also written to stderr.
 So, typical usage would be:
 
 ```
-grep '^code' -A -1 foo.tz | ocaml_of_michelson > foo.ml
+ocaml_of_michelson < foo.tz > foo.ml
 ```
+
+The output file should typecheck with `test/inst.mli`.  (There is no
+implementation for `inst.mli`, so the generated code cannot run.)
 
 ## Test
 
