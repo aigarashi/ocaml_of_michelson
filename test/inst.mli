@@ -129,7 +129,7 @@ val keccak : bytes_ -> bytes_
 val sha256 : bytes_ -> bytes_
 val sha512 : bytes_ -> bytes_
 val sha3 : bytes_ -> bytes_
-val check_siganture : key_ -> signature_ -> bytes_ -> bool_
+val check_signature : key_ -> signature_ -> bytes_ -> bool_
 
 (* BLS12-381 primitives *)
 (* neg, add, mul, int are overloaded *)
