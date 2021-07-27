@@ -213,18 +213,18 @@ let rec exp_of_prog kont = function
 let exp_of_code (Code (optty, body)) =
   let kont, ids = exp_of_prog init_kont (body, ["param_st"]) in
   let body =
-    Inliner.tidy_up_if 
-      (Inliner.remove_trivial_let
-         (Inliner.linear
-            (match ids with
-             | Some [] -> failwith "exp_of_code: Stack is empty!"
-             | Some (x :: _) -> kont (exp_of_tuple_vars [x])
-             | None -> kont (exp_of_tuple_vars [])))) in
+    (match ids with
+     | Some [] -> failwith "exp_of_code: Stack is empty!"
+     | Some (x :: _) -> kont (exp_of_tuple_vars [x])
+     | None -> kont (exp_of_tuple_vars []))
+    |> Inliner.linear
+    |> Inliner.remove_trivial_let
+    |> Inliner.tidy_up_if in
   let body =
     match optty with
     | None -> body
-    | Some (_, st_ty) -> Exp.constraint_ body (Typ.tuple [Typ.constr (Location.mknoloc (Longident.Lident "list_"))
-                                                            [Typ.constr (Location.mknoloc (Longident.Lident "operation_")) []];
+    | Some (_, st_ty) -> Exp.constraint_ body (Typ.tuple [Typ.constr (Location.mknoloc (Longident.Lident "list"))
+                                                            [Typ.constr (Location.mknoloc (Longident.Lident "operation")) []];
                                                           st_ty]) in
   let param =
     match optty with
