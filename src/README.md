@@ -32,8 +32,9 @@ rebuild it after adding function declarations.
 * `Trans.exp_of_prog` is the main translating function, which takes
     * `kont`, which represents the translation of preceding instructions as an OCaml function.
     * a list of instructions, and
-    * a list of identifiers (strings), which represents the shape of the stack
-  and returns
+    * a list of identifiers (strings), which represents the shape of the stack,
+
+    and returns
     * the translated code (as a function) and
     * a list (`Some [x1; ...; xn]`) of identifiers, which represents the shape of the stack at the end of the current block, or `None` to signal that the block ends with `FAILWITH`.
 

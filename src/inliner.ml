@@ -46,7 +46,21 @@ let remove_trivial_let_mapper =
                  Pexp_let (Nonrecursive,
                            [{pvb_pat = {ppat_desc = Ppat_tuple []};
                              pvb_expr ={pexp_desc = Pexp_tuple []};}],
-                           body) } -> body
+                           body) } ->
+              (* let () = () in e  ==> e *)
+              mapper.expr mapper body
+           | { pexp_desc =
+                 Pexp_let (Nonrecursive,
+                           [{pvb_pat = {ppat_desc = Ppat_tuple []};
+                             pvb_expr = rhs}],
+                           body) } ->
+              (* let () = e1 in e2  ==> e1; e2 *)
+              let rhs' = mapper.expr mapper rhs in
+              let body' = mapper.expr mapper body in
+              (match body' with
+                 (* let () = e in ()  ==> e *)
+                 { pexp_desc = Pexp_tuple [] } -> rhs'
+               | _ -> Ast_helper.Exp.sequence rhs' body')
            | other -> default_mapper.expr mapper other }
 
 let remove_trivial_let exp =
