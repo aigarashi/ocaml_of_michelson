@@ -1,6 +1,8 @@
 open Asttypes
 open Parsetree
 open Ast_mapper
+open MySupport
+open Ast_helper
 
 exception NonLinear
 
@@ -35,8 +37,8 @@ let linear_mapper =
               end
            | other -> default_mapper.expr mapper other }
 
-let linear exp =
-  linear_mapper.expr linear_mapper exp
+let linear expr =
+  linear_mapper.expr linear_mapper expr
 
 let remove_trivial_let_mapper =
   { default_mapper with
@@ -60,8 +62,29 @@ let remove_trivial_let_mapper =
               (match body' with
                  (* let () = e in ()  ==> e *)
                  { pexp_desc = Pexp_tuple [] } -> rhs'
-               | _ -> Ast_helper.Exp.sequence rhs' body')
+               | _ -> Exp.sequence rhs' body')
            | other -> default_mapper.expr mapper other }
 
-let remove_trivial_let exp =
-  remove_trivial_let_mapper.expr remove_trivial_let_mapper exp
+let remove_trivial_let expr =
+  remove_trivial_let_mapper.expr remove_trivial_let_mapper expr
+
+let tidy_up_if_mapper =
+  { default_mapper with
+    expr = fun mapper expr ->
+           match expr with
+           | { pexp_desc = Pexp_ifthenelse (expr1, expr2, Some expr3) } ->
+              begin match mapper.expr mapper expr2 with
+              | { pexp_desc = Pexp_tuple [] } ->
+                 let expr1 = Exp.apply (exp_of_var "not") [Asttypes.Nolabel, expr1] in
+                 Exp.ifthenelse expr1 (mapper.expr mapper expr3) None
+              | expr2' ->
+                 begin match mapper.expr mapper expr3 with
+                 | { pexp_desc = Pexp_tuple [] } ->
+                    Exp.ifthenelse expr1 expr2' None
+                 | expr3' -> Exp.ifthenelse expr1 expr2' (Some expr3')
+                 end
+              end
+           | other -> default_mapper.expr mapper other }
+
+let tidy_up_if expr =
+  tidy_up_if_mapper.expr tidy_up_if_mapper expr
