@@ -1,29 +1,23 @@
-type int_ = int
-type bool_ = bool
-type unit_ = unit
-type string_ = string
 type ('a, 'b) or_ = Left of 'a | Right of 'b
-type 'a option_ = 'a option
-type 'a list_ = 'a list
-type never_
-type 'a set_
-type ('a, 'b) pair_ = 'a * 'b
-type ('k, 't) map_
-type ('k, 't) big_map_ = ('k, 't) map_
+type never
+type 'a set
+type ('a, 'b) pair = 'a * 'b
+type ('k, 't) map
+type ('k, 't) big_map = ('k, 't) map
 
 val failwith : 'a -> 'b
 
 (* generic comparison *)
-val eq : int_ -> bool_
-val ge : int_ -> bool_
-val gt : int_ -> bool_
-val le : int_ -> bool_
-val lt : int_ -> bool_
-val neq : int_ -> bool_
+val eq : int -> bool
+val ge : int -> bool
+val gt : int -> bool
+val le : int -> bool
+val lt : int -> bool
+val neq : int -> bool
 
 (* operations on unit *)
-val unit : unit_
-val compare : 'a -> 'a -> int_
+val unit : unit
+val compare : 'a -> 'a -> int
 
 (* operations on booleans *)
 (* they are overloaded with operations on ints, hence polymorphic *)
@@ -34,114 +28,114 @@ val not : 'a -> 'a
 
 (* operations on integers and natural numbers *)
 (* int and nat are identified *)
-type nat_ = int_
+type nat = int
 
-val neg : int_ -> int_
-val abs : int_ -> int_
-val isnat : int_ -> int_ option_
-val int : int_ -> int_
-val add : int_ -> int_ -> int_
-val sub : int_ -> int_ -> int_
-val mul : int_ -> int_ -> int_
-val ediv : int_ -> int_ -> (int_ * int_) option_
-val lsl_ : int_ -> int_ -> int_ (* keyword *)
-val lsr_ : int_ -> int_ -> int_ (* keyword *)
+val neg : int -> int
+val abs : int -> int
+val isnat : int -> int option
+val int : int -> int
+val add : int -> int -> int
+val sub : int -> int -> int
+val mul : int -> int -> int
+val ediv : int -> int -> (int * int) option
+val lsl_ : int -> int -> int (* keyword *)
+val lsr_ : int -> int -> int (* keyword *)
 
 (* operations on strings *)
-val concat : string_ -> string_ -> string_
-val size : string_ -> int_
-val slice : nat_ -> nat_ -> string_ -> string_ option_
+val concat : string -> string -> string
+val size : string -> int
+val slice : nat -> nat -> string -> string option
 
 (* Operations on pairs and right combs *)
 val car : 'a * 'b -> 'a
 val cdr : 'a * 'b -> 'b
-val pair : 'a -> 'b -> ('a, 'b) pair_
-val unpair : ('a, 'b) pair_ -> 'a * 'b
+val pair : 'a -> 'b -> ('a, 'b) pair
+val unpair : ('a, 'b) pair -> 'a * 'b
 
 (* Operations on maps *)
-val empty_map : ('k, 'v) map_
+val empty_map : ('k, 'v) map
 
 (* Operations on big_maps *)
-val empty_big_map : ('k, 'v) big_map_
-val get : 'k -> ('k, 'v) big_map_ -> 'v option_
-val mem : 'k -> ('k, 'v) big_map_ -> bool_
-val update : 'k -> 'v option_ -> ('k, 'v) big_map_ -> ('k, 'v) big_map_
+val empty_big_map : ('k, 'v) big_map
+val get : 'k -> ('k, 'v) big_map -> 'v option
+val mem : 'k -> ('k, 'v) big_map -> bool
+val update : 'k -> 'v option -> ('k, 'v) big_map -> ('k, 'v) big_map
 (* instructions returning multiple values are not supported yet *)
-val get_and_update :  'k -> 'v option_ -> ('k, 'v) big_map_ -> 'v option_ * ('k, 'v) big_map_
+val get_and_update :  'k -> 'v option -> ('k, 'v) big_map -> 'v option * ('k, 'v) big_map
 
 (* Operations on optional values *)
-val some : 'a -> 'a option_
-val none : 'a option_
+val some : 'a -> 'a option
+val none : 'a option
 
 (* Operations on unions *)
 val left : 'a -> ('a, 'b) or_
 val right : 'b -> ('a, 'b) or_
 
 (* Operations on lists *)
-val cons : 'a -> 'a list_ -> 'a list_
-val nil : 'a list_
-val size : 'a list -> nat_
+val cons : 'a -> 'a list -> 'a list
+val nil : 'a list
+val size : 'a list -> nat
 
 (* Domain specific data types *)
-type timestamp_ = int_ (* for simplicity *)
-type mutez_ = int_     (* for simplicity *)
-type address_ = string_ (* for simplicity *)
-type 'a contract_
-type operation_
-type key_
-type key_hash_
-type signature_
-type chain_id_
-type bls12_381_g1_ = int_
-type bls12_381_g2_ = int_
-type bls12_381_fr_ = int_
-type 'a sapling_transaction_
-type 'a sapling_state_
-type 'a ticket_
+type timestamp = int (* for simplicity *)
+type mutez = int     (* for simplicity *)
+type address = string (* for simplicity *)
+type 'a contract
+type operation
+type key
+type key_hash
+type signature
+type chain_id
+type bls12_381_g1_ = int
+type bls12_381_g2_ = int
+type bls12_381_fr_ = int
+type 'a sapling_transaction
+type 'a sapling_state
+type 'a ticket
 
-val transfer_tokens : 'a -> mutez_ -> 'a contract_ -> operation_
-val set_delegate : key_hash_ option_ -> operation_
-val balance : mutez_
-val address : 'a contract_ -> address_
-val contract : address_ -> 'a contract_ option_
-val source : address_
-val sender : address_
-val self : 'a contract_
-val self_address : address_
-val amount : mutez_
-val implicit_account : key_hash_ -> unit_ contract_
-val voting_power : key_hash_ -> nat_
-val now : timestamp_
-val chain_id : chain_id_
-val level : nat_
-val total_voting_power : nat_
+val transfer_tokens : 'a -> mutez -> 'a contract -> operation
+val set_delegate : key_hash option -> operation
+val balance : mutez
+val address : 'a contract -> address
+val contract : address -> 'a contract option
+val source : address
+val sender : address
+val self : 'a contract
+val self_address : address
+val amount : mutez
+val implicit_account : key_hash -> unit contract
+val voting_power : key_hash -> nat
+val now : timestamp
+val chain_id : chain_id
+val level : nat
+val total_voting_power : nat
 
 (* operations on bytes *)
-type bytes_ = string_
-val pack : 'a -> bytes_
-val unpack : bytes_ -> 'a option_
+type bytes = string
+val pack : 'a -> bytes
+val unpack : bytes -> 'a option
 (* concat, size, slice, compare are overleaded *)
 
 (* Cryptographic primitives *)
-val hash_key : key_ -> key_hash_
-val blake2b : bytes_ -> bytes_
-val keccak : bytes_ -> bytes_
-val sha256 : bytes_ -> bytes_
-val sha512 : bytes_ -> bytes_
-val sha3 : bytes_ -> bytes_
-val check_signature : key_ -> signature_ -> bytes_ -> bool_
+val hash_key : key -> key_hash
+val blake2b : bytes -> bytes
+val keccak : bytes -> bytes
+val sha256 : bytes -> bytes
+val sha512 : bytes -> bytes
+val sha3 : bytes -> bytes
+val check_signature : key -> signature -> bytes -> bool
 
 (* BLS12-381 primitives *)
 (* neg, add, mul, int are overloaded *)
-val paring_check : (bls12_381_g1_, bls12_381_g2_) pair_ list_ -> bool_
+val paring_check : (bls12_381_g1_, bls12_381_g2_) pair list -> bool
 
 (* Sapling operations *)
-val sapling_verify_update : 'a sapling_transaction_ -> 'a sapling_state_ -> (int_, 'a sapling_state_) pair_ option_
-val sapling_empty_state : 'a sapling_state_
+val sapling_verify_update : 'a sapling_transaction -> 'a sapling_state -> (int, 'a sapling_state) pair option
+val sapling_empty_state : 'a sapling_state
 
 (* Operations on tickets *)
-val ticket : 'a -> nat_ -> 'a ticket_
-val read_ticket : 'a ticket_ -> ('a, nat_) pair_ * 'a ticket_
-val split_ticket : 'a ticket_ -> (nat_, nat_) pair_ -> ('a ticket_, 'a ticket_) pair_ option_
-val join_ticket : ('a ticket_, 'a ticket_) pair_ -> 'a ticket_ option_
+val ticket : 'a -> nat -> 'a ticket
+val read_ticket : 'a ticket -> ('a, nat) pair * 'a ticket
+val split_ticket : 'a ticket -> (nat, nat) pair -> ('a ticket, 'a ticket) pair option
+val join_ticket : ('a ticket, 'a ticket) pair -> 'a ticket option
 
