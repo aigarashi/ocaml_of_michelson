@@ -20,9 +20,10 @@ toplevel :
   | PARAM pty=Ty SEMI STORAGE stty=Ty SEMI CODE LBRACE is=InstList RBRACE EOF { Code (Some (pty, stty), is) }
 
 Ty :
-    ty=LCID { Typ.constr (Location.mknoloc (Longident.Lident (ty ^ "_"))) [] }
+    ty=LCID { Typ.constr (Location.mknoloc (Longident.Lident ty)) [] }
   | LPAREN ty=LCID tys=Tys RPAREN {
-      Typ.constr (Location.mknoloc (Longident.Lident (ty ^ "_"))) tys
+      let ty = if ty = "or" then "or_" else ty in
+      Typ.constr (Location.mknoloc (Longident.Lident ty)) tys
     }
 Tys :
     /* empty */ { [] }
