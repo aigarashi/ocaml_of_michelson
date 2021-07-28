@@ -52,3 +52,6 @@ The interface file `test/inst.mli` lists the types of instructions.
 * The produced ocaml code should typecheck but we make loose assumptions about the types of instructions
 (e.g., `string` and `address` are identified, `compare` can be applied to any type, and so on).
 So, a potential bug of the translator may be overlooked.
+
+* Some overloaded instructions (at least `MAP`) can't be handled properly even with loose checking.
+
