@@ -144,15 +144,54 @@ let rec exp_of_prog kont = function
                                expr))
           (rest, vars_for_rest @ (drop n vars))
      | None ->
-        let body = kond_is (Exp.tuple []) in
-        let fun_ = Exp.fun_ Asttypes.Nolabel None (Pat.tuple [pat_of_var var1; Pat.tuple []]) body in
+        let fun_ = Exp.fun_ Asttypes.Nolabel None
+                     (Pat.tuple [pat_of_var var1;
+                                 pat_of_tuple_vars vars_for_body])
+                     (kond_is (Exp.tuple [])) in
         let vars_for_rest = newVars (List.length vars) in
         exp_of_prog
           (fun expr -> kont (let_ vars_for_rest
                                (Exp.apply (exp_of_var "map_list")
                                   [Asttypes.Nolabel, fun_;
                                    Asttypes.Nolabel,
-                                   Exp.tuple [exp_of_var var0; Exp.tuple []]])
+                                   Exp.tuple [exp_of_var var0; exp_of_tuple_vars vars]])
+                               expr))
+          (rest, vars_for_rest)
+     end
+  (* ITER for lists *)
+  | OneBlock ("ITER", is) :: rest, var0 :: vars ->
+     let var1, vars_for_body = newVar (), newVars (List.length vars) in
+     let kond_is, final_vars = exp_of_prog init_kont (is, var1 :: vars_for_body) in
+     begin match final_vars with
+       Some final_vars ->
+        assert(List.length vars_for_body = List.length final_vars);
+        let updated_vars = diff final_vars vars_for_body in
+        let n = List.length updated_vars in
+        let fun_ = Exp.fun_ Asttypes.Nolabel None
+                     (Pat.tuple [pat_of_var var1; pat_of_tuple_vars (take n vars_for_body)])
+                     (kond_is (exp_of_tuple_vars updated_vars)) in
+        let vars_for_rest = newVars n in
+        exp_of_prog
+          (fun expr -> kont (let_ vars_for_rest
+                               (Exp.apply (exp_of_var "map_iter")
+                                  [Asttypes.Nolabel, fun_;
+                                   Asttypes.Nolabel,
+                                   Exp.tuple [exp_of_var var0;
+                                              exp_of_tuple_vars (take n vars)]])
+                               expr))
+          (rest, vars_for_rest @ (drop n vars))
+     | None ->
+        let fun_ = Exp.fun_ Asttypes.Nolabel None
+                     (Pat.tuple [pat_of_var var1;
+                                 pat_of_tuple_vars vars_for_body])
+                     (kond_is (Exp.tuple [])) in
+        let vars_for_rest = newVars (List.length vars) in
+        exp_of_prog
+          (fun expr -> kont (let_ vars_for_rest
+                               (Exp.apply (exp_of_var "map_iter")
+                                  [Asttypes.Nolabel, fun_;
+                                   Asttypes.Nolabel,
+                                   Exp.tuple [exp_of_var var0; exp_of_tuple_vars vars]])
                                expr))
           (rest, vars_for_rest)
      end
