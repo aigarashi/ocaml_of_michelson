@@ -74,6 +74,7 @@ val right : 'b -> ('a, 'b) or_
 (* Operations on lists *)
 val cons : 'a -> 'a list -> 'a list
 val nil : 'a list
+val map_list : (('a * 'b) -> ('c * 'b)) -> 'a list * 'b -> 'c list * 'b
 val size : 'a list -> nat
 
 (* Domain specific data types *)

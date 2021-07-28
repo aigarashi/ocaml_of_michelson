@@ -121,6 +121,41 @@ let rec exp_of_prog kont = function
      (* DEBUG *)
      assert(n >= 0 && List.length vars >= n);
      exp_of_prog kont (rest, take n vars @ var1 :: drop n vars)
+  (* MAP for lists *)
+  | OneBlock ("MAP", is) :: rest, var0 :: vars ->
+     let var1, vars_for_body = newVar (), newVars (List.length vars) in
+     let kond_is, final_vars = exp_of_prog init_kont (is, var1 :: vars_for_body) in
+     begin match final_vars with
+       Some (var2 :: final_vars) ->
+        assert(List.length vars_for_body = List.length final_vars);
+        let updated_vars = diff final_vars vars_for_body in
+        let n = List.length updated_vars in
+        let body = kond_is (Exp.tuple [exp_of_var var2; exp_of_tuple_vars updated_vars]) in
+        let fun_ = Exp.fun_ Asttypes.Nolabel None
+                     (Pat.tuple [pat_of_var var1; pat_of_tuple_vars (take n vars_for_body)]) body in
+        let vars_for_rest = newVars n in
+        exp_of_prog
+          (fun expr -> kont (let_ vars_for_rest
+                               (Exp.apply (exp_of_var "map_list")
+                                  [Asttypes.Nolabel, fun_;
+                                   Asttypes.Nolabel,
+                                   Exp.tuple [exp_of_var var0;
+                                              exp_of_tuple_vars (take n vars)]])
+                               expr))
+          (rest, vars_for_rest @ (drop n vars))
+     | None ->
+        let body = kond_is (Exp.tuple []) in
+        let fun_ = Exp.fun_ Asttypes.Nolabel None (Pat.tuple [pat_of_var var1; Pat.tuple []]) body in
+        let vars_for_rest = newVars (List.length vars) in
+        exp_of_prog
+          (fun expr -> kont (let_ vars_for_rest
+                               (Exp.apply (exp_of_var "map_list")
+                                  [Asttypes.Nolabel, fun_;
+                                   Asttypes.Nolabel,
+                                   Exp.tuple [exp_of_var var0; Exp.tuple []]])
+                               expr))
+          (rest, vars_for_rest)
+     end
   (* branching instructions *)
   | TwoBlocks ("IF_LEFT", is1, is2) :: rest, var0 :: vars ->
      let var1 = newVar () in

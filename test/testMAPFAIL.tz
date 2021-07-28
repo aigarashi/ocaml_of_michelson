@@ -1,0 +1,1 @@
+code { PUSH int 0; SWAP; MAP { ADD; FAILWITH } }
