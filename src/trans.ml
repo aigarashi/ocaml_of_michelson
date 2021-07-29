@@ -150,6 +150,24 @@ let rec exp_of_prog kont = function
   | SimpleWithNum ("DROP", n) :: rest, vars ->
      assert (n >= 0 && List.length vars >= n);
      exp_of_prog kont (rest, drop n vars)
+  (* LAMBDA *)
+  | OneBlockWithTwoTys ("LAMBDA", ty1, ty2, is) :: rest, vars ->
+     let param = newVar () in
+     let kont_body, final_vars = exp_of_prog init_kont (is, [param]) in
+     let lam = newVar () in
+     let res_body = 
+       match final_vars with
+       | None -> exp_of_tuple_vars []
+       | Some [id] -> exp_of_var id
+       | Some _ -> failwith ("Can't happen: body of LAMBDA returns an invalid stack") in
+     let body = kont_body res_body in
+     let fun_ = Exp.fun_ Asttypes.Nolabel None
+                  (Pat.constraint_ (pat_of_var param) ty1)
+                  (Exp.constraint_ body ty2) in
+     exp_of_prog
+       (fun exp ->
+         kont (let_ [lam] (Exp.apply (exp_of_var "lambda") [Asttypes.Nolabel, fun_]) exp))
+       (rest, lam :: vars)
   (* General instructions consuming n values and producing m values *)
   | Simple s :: rest, vars -> begin
       try
@@ -219,7 +237,8 @@ let exp_of_code (Code (optty, body)) =
      | None -> kont (exp_of_tuple_vars []))
     |> Inliner.linear
     |> Inliner.remove_trivial_let
-    |> Inliner.tidy_up_if in
+    |> Inliner.tidy_up_if
+  in
   let body =
     match optty with
     | None -> body
