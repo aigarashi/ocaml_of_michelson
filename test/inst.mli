@@ -56,6 +56,7 @@ val unpair : ('a, 'b) pair -> 'a * 'b
 (* Operations on lambda *)
 val lambda : ('a -> 'b) -> ('a, 'b) lambda
 val exec : 'a -> ('a, 'b) lambda -> 'b
+val apply : 'a -> (('a, 'b) pair, 'c) lambda -> ('b, 'c) lambda
 
 (* Operations on maps *)
 val empty_map : ('k, 'v) map
