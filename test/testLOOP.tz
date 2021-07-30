@@ -1,0 +1,1 @@
+code { PUSH bool True; LOOP { PUSH bool True } }
