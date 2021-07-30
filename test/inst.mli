@@ -4,6 +4,7 @@ type 'a set
 type ('a, 'b) pair = 'a * 'b
 type ('k, 't) map
 type ('k, 't) big_map = ('k, 't) map
+type ('a, 'b) lambda
 
 val failwith : 'a -> 'b
 val loop : ('a -> bool * 'a) -> (bool * 'b) -> 'b
@@ -53,6 +54,10 @@ val car : 'a * 'b -> 'a
 val cdr : 'a * 'b -> 'b
 val pair : 'a -> 'b -> ('a, 'b) pair
 val unpair : ('a, 'b) pair -> 'a * 'b
+
+(* Operations on lambda *)
+val lambda : ('a -> 'b) -> ('a, 'b) lambda
+val exec : 'a -> ('a, 'b) lambda -> 'b
 
 (* Operations on maps *)
 val empty_map : ('k, 'v) map

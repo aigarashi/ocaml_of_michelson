@@ -20,6 +20,19 @@ let subst id e expr =
   let mapper = subst_mapper id e seen in
   mapper.expr mapper expr
 
+let rec simultaneous_subst pats rhss body =
+  assert (List.length pats = List.length rhss);
+  match pats, rhss with
+  | [], [] -> ([], [], body)
+  | ({ppat_desc = Ppat_var {txt=id}} as pat) :: restpats, expr :: restrhss ->
+     let newpats, newrhss, newbody = simultaneous_subst restpats restrhss body in
+     begin try newpats, newrhss, subst id expr newbody with
+             NonLinear -> pat :: newpats, expr :: newrhss, newbody
+     end
+  | pat :: restpats, expr :: restrhss ->
+     let newpats, newrhss, newbody = simultaneous_subst restpats restrhss body in
+     pat :: newpats, expr :: newrhss, newbody
+
 let linear_mapper =
   { default_mapper with
     expr = fun mapper expr ->
@@ -35,6 +48,20 @@ let linear_mapper =
                 try subst id inlined_e inlined_body with
                   NonLinear -> MySupport.let_ [id] inlined_e (mapper.expr mapper inlined_body)
               end
+           | { pexp_desc =
+                 Pexp_let (Nonrecursive,
+                           [{pvb_pat = {ppat_desc = Ppat_tuple pats};
+                             pvb_expr = {pexp_desc = Pexp_tuple rhss}}],
+                           body) } ->
+              let inlined_body = mapper.expr mapper body in
+              let inlined_rhss = List.map (mapper.expr mapper) rhss in
+              let newpats, newrhss, newbody = simultaneous_subst pats inlined_rhss inlined_body in
+              Exp.let_ Nonrecursive
+                [ { pvb_pat = (match newpats with [pat] -> pat | _ -> Pat.tuple newpats);
+                    pvb_expr = (match newrhss with [rhs] -> rhs | _ -> Exp.tuple newrhss);
+                    pvb_attributes = [];
+                    pvb_loc = Location.none } ]
+                newbody
            | other -> default_mapper.expr mapper other }
 
 let linear expr =
