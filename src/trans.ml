@@ -317,6 +317,9 @@ let rec exp_of_prog kont = function
        (fun exp ->
          kont (let_ [lam] (Exp.apply (exp_of_var "lambda") [Asttypes.Nolabel, fun_]) exp))
        (rest, lam :: vars)
+  (* GET and UPDATE *)
+  | SimpleWithNum (("GET" | "UPDATE" as s), n) :: rest, vars ->
+     exp_of_prog kont (Simple (s ^ string_of_int n) :: rest, vars)
   (* General instructions consuming n values and producing m values *)
   | Simple s :: rest, vars -> begin
       try
