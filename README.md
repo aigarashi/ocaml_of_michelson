@@ -47,6 +47,8 @@ The interface file `test/inst.mli` lists the types of instructions.
 
 ## Bugs
 
+* The generated program is _not_ supposed to run :sweat_drops:.  (This is a *FEATURE*!)
+
 * Input checking is loose.  It assumes the code section is well typed.
 
 * The produced ocaml code should typecheck but we make loose assumptions about the types of instructions
@@ -55,3 +57,4 @@ So, a potential bug of the translator may be overlooked.
 
 * Some overloaded instructions (at least `MAP`) can't be handled properly even with loose checking.
 
+* `GET n` and `UPDATE n` assumes `n` is less than 7.  (See `test/inst.mli` to see why.)
