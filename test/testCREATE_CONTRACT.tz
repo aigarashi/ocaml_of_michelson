@@ -1,0 +1,10 @@
+code {
+  PUSH int 42;
+  BALANCE;
+  NONE key_hash;
+  CREATE_CONTRACT {
+     parameter int;
+     storage int;
+     code { UNPAIR; ADD; NIL operation; SWAP; PAIR }
+  }
+}

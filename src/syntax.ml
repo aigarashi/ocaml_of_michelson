@@ -9,7 +9,7 @@ type inst =
   | OneBlockWithNum of string * int * inst list  (* such as DIP 3 code *)
   | OneBlockWithTwoTys of string * Parsetree.core_type * Parsetree.core_type * inst list  (* such as LAMBDA ty ty code *)
   | TwoBlocks of string * inst list * inst list  (* such IF code1 code 2 *)
-
-type program = 
+  | CreateContract of string * program
+and program = 
     Code of (Parsetree.core_type * Parsetree.core_type) option * inst list
 
