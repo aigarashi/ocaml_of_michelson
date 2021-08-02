@@ -337,7 +337,8 @@ let rec exp_of_prog kont = function
             kont (let_ produced_vars (call funname consumed_vars) exp))
           (rest, produced_vars @ untouched_vars)
      with Not_found -> failwith ("Instruction not implemented: " ^ s)
-     end
+    end
+     
   and gen_branch kont rest var0 vars kont_body1 final_vars1 kont_body2 final_vars2 branch =
   match final_vars1, final_vars2 with
   | None, None ->
@@ -382,7 +383,7 @@ let rec exp_of_prog kont = function
                            exp))
        (rest, newvars @ drop num_newvars final_vars1)
     
-let exp_of_code (Code (optty, body)) =
+and exp_of_code (Code (optty, body)) =
   let kont, ids = exp_of_prog init_kont (body, ["param_st"]) in
   let body =
     (match ids with
@@ -405,9 +406,5 @@ let exp_of_code (Code (optty, body)) =
     | Some (param_ty, st_ty) ->
        Pat.constraint_ (pat_of_var "param_st") (Typ.tuple [param_ty; st_ty])
   in
-  Str.value Asttypes.Nonrecursive
-    [{ pvb_pat = pat_of_var "main";
-       pvb_expr = Exp.fun_ Asttypes.Nolabel None param body;
-       pvb_attributes = [];
-       pvb_loc = Location.none } ]
-
+  Exp.fun_ Asttypes.Nolabel None param body;
+  

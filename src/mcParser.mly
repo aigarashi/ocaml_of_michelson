@@ -16,8 +16,11 @@
 %%
 
 toplevel :
-  | CODE LBRACE is=InstList RBRACE EOF { Code (None, is) }
-  | PARAM pty=Ty SEMI STORAGE stty=Ty SEMI CODE LBRACE is=InstList RBRACE EOF { Code (Some (pty, stty), is) }
+  | sc=Script EOF { sc }
+
+Script:
+  | CODE LBRACE is=InstList RBRACE { Code (None, is) }
+  | PARAM pty=Ty SEMI STORAGE stty=Ty SEMI CODE LBRACE is=InstList RBRACE { Code (Some (pty, stty), is) }
 
 Ty :
     ty=LCID { Typ.constr (Location.mknoloc (Longident.Lident ty)) [] }
@@ -41,6 +44,7 @@ SingleInst :
   | m=MNEMONIC ty1=Ty ty2=Ty LBRACE is=InstList RBRACE { OneBlockWithTwoTys (m, ty1, ty2, is) }
   | m=MNEMONIC i=INTV LBRACE is=InstList RBRACE { OneBlockWithNum (m, int_of_string i, is) }
   | m=MNEMONIC LBRACE is1=InstList RBRACE LBRACE is2=InstList RBRACE { TwoBlocks (m, is1, is2) }
+  | m=MNEMONIC LBRACE sc=Script RBRACE { CreateContract (m, sc) }
   | LBRACE is=InstList RBRACE { Block is }
   | m=MNEMONIC error { prerr_string m; exit 1 }
 
