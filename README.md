@@ -58,3 +58,5 @@ So, a potential bug of the translator may be overlooked.
 * Some overloaded instructions (at least `MAP`) can't be handled properly even with loose checking.
 
 * `GET n` and `UPDATE n` assumes `n` is less than 7.  (See `test/inst.mli` to see why.)
+
+* Macros are not supported yet.
