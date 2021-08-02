@@ -322,6 +322,26 @@ let rec exp_of_prog kont = function
   (* GET and UPDATE *)
   | SimpleWithNum (("GET" | "UPDATE" as s), n) :: rest, vars ->
      exp_of_prog kont (Simple (s ^ string_of_int n) :: rest, vars)
+  (* CREATE_CONTRACT *)
+  | CreateContract("CREATE_CONTRACT" as s, code) :: rest, vars ->
+     let body = exp_of_code code in
+     begin try
+         let funname, (n, m) = find_spec (String.lowercase_ascii s) in
+         let n = n - 1 in
+         assert(List.length vars >= 3);
+         let consumed_vars, untouched_vars = take n vars, drop n vars in
+         let produced_vars = newVars m in
+         exp_of_prog
+           (fun exp ->
+             kont (let_ produced_vars
+                     (Exp.apply (exp_of_var funname)
+                        ((Asttypes.Nolabel, body) ::
+                           (List.map (fun id -> Asttypes.Nolabel, exp_of_var id)
+                              consumed_vars)))
+                     exp))
+           (rest, produced_vars @ untouched_vars)
+       with Not_found -> failwith ("Instruction not implemented: " ^ s)
+     end
   (* General instructions consuming n values and producing m values *)
   | Simple s :: rest, vars -> begin
       try
@@ -338,7 +358,6 @@ let rec exp_of_prog kont = function
           (rest, produced_vars @ untouched_vars)
      with Not_found -> failwith ("Instruction not implemented: " ^ s)
     end
-     
   and gen_branch kont rest var0 vars kont_body1 final_vars1 kont_body2 final_vars2 branch =
   match final_vars1, final_vars2 with
   | None, None ->

@@ -118,6 +118,7 @@ type 'a sapling_transaction
 type 'a sapling_state
 type 'a ticket
 
+val create_contract : ('a * 'b -> operation list * 'b) -> key_hash option -> mutez -> 'b -> operation * address
 val transfer_tokens : 'a -> mutez -> 'a contract -> operation
 val set_delegate : key_hash option -> operation
 val balance : mutez
