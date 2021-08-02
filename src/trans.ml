@@ -48,6 +48,8 @@ let find_spec =
  kont represents instructions already processed *)
 let rec exp_of_prog kont = function
   | [], vars -> (kont, Some vars)
+  (* A block is flattened *)
+  | Block is :: rest, vars -> exp_of_prog kont (is@rest, vars)
   (* CAST is no-op *)
   | Simple "CAST" :: rest, vars -> exp_of_prog kont (rest, vars)
   (* PUSH *)

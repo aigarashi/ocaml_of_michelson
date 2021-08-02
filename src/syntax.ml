@@ -1,6 +1,7 @@
 (* (untyped) Michelson program *)
 
 type inst =
+  | Block of inst list
   | Simple of string
   | SimpleArgCon of string * Parsetree.expression (* such as PUSH int 0 *)
   | SimpleWithNum of string * int
