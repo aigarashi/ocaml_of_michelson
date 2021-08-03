@@ -1,3 +1,5 @@
+exception Never
+
 type ('a, 'b) or_ = Left of 'a | Right of 'b
 type never
 type 'a set

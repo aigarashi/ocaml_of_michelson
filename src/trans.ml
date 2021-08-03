@@ -62,6 +62,11 @@ let rec exp_of_prog kont = function
   (* FAILWITH is a special instruction *)
   | Simple "FAILWITH" :: rest, var0 :: vars ->
      ((fun exp -> kont (call "failwith" [var0])), None)
+  (* NEVER is also a special instruction *)
+  | Simple "NEVER" :: rest, var0 :: vars ->
+     ((fun exp -> kont (Exp.apply (exp_of_var "raise")
+                          [Asttypes.Nolabel,
+                           Exp.construct (Location.mknoloc (Longident.Lident "Never")) None])), None)
   (* DUP duplicates name of the nth element of the stack *)
   | Simple "DUP" :: rest, vars ->
      exp_of_prog kont (SimpleWithNum ("DUP", 1) :: rest, vars)
