@@ -5,6 +5,6 @@ code {
   CREATE_CONTRACT {
      parameter int;
      storage int;
-     code { UNPAIR; ADD; NIL operation; SWAP; PAIR }
+     code { UNPAIR; ADD; NIL operation; PAIR }
   }
 }
