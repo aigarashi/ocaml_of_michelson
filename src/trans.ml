@@ -48,6 +48,8 @@ let find_spec =
  kont represents instructions already processed *)
 let rec exp_of_prog kont = function
   | [], vars -> (kont, Some vars)
+  (* A block is flattened *)
+  | Block is :: rest, vars -> exp_of_prog kont (is@rest, vars)
   (* CAST is no-op *)
   | Simple "CAST" :: rest, vars -> exp_of_prog kont (rest, vars)
   (* PUSH *)
@@ -121,6 +123,155 @@ let rec exp_of_prog kont = function
      (* DEBUG *)
      assert(n >= 0 && List.length vars >= n);
      exp_of_prog kont (rest, take n vars @ var1 :: drop n vars)
+  (* MAP for lists *)
+  | OneBlock ("MAP", is) :: rest, var0 :: vars ->
+     let var1, vars_for_body = newVar (), newVars (List.length vars) in
+     let kond_is, final_vars = exp_of_prog init_kont (is, var1 :: vars_for_body) in
+     begin match final_vars with
+       Some (var2 :: final_vars) ->
+        assert(List.length vars_for_body = List.length final_vars);
+        let updated_vars = diff final_vars vars_for_body in
+        let n = List.length updated_vars in
+        let body = kond_is (Exp.tuple [exp_of_var var2; exp_of_tuple_vars updated_vars]) in
+        let fun_ = Exp.fun_ Asttypes.Nolabel None
+                     (Pat.tuple [pat_of_var var1; pat_of_tuple_vars (take n vars_for_body)]) body in
+        let vars_for_rest = newVars n in
+        exp_of_prog
+          (fun expr -> kont (let_ vars_for_rest
+                               (Exp.apply (exp_of_var "map_list")
+                                  [Asttypes.Nolabel, fun_;
+                                   Asttypes.Nolabel,
+                                   Exp.tuple [exp_of_var var0;
+                                              exp_of_tuple_vars (take n vars)]])
+                               expr))
+          (rest, vars_for_rest @ (drop n vars))
+     | Some [] -> failwith "MAP: Empty stack at the end of the body"
+     | None ->
+        let fun_ = Exp.fun_ Asttypes.Nolabel None
+                     (Pat.tuple [pat_of_var var1;
+                                 pat_of_tuple_vars vars_for_body])
+                     (kond_is (Exp.tuple [])) in
+        let vars_for_rest = newVars (List.length vars) in
+        exp_of_prog
+          (fun expr -> kont (let_ vars_for_rest
+                               (Exp.apply (exp_of_var "map_list")
+                                  [Asttypes.Nolabel, fun_;
+                                   Asttypes.Nolabel,
+                                   Exp.tuple [exp_of_var var0; exp_of_tuple_vars vars]])
+                               expr))
+          (rest, vars_for_rest)
+     end
+  (* ITER for lists *)
+  | OneBlock ("ITER", is) :: rest, var0 :: vars ->
+     let var1, vars_for_body = newVar (), newVars (List.length vars) in
+     let kond_is, final_vars = exp_of_prog init_kont (is, var1 :: vars_for_body) in
+     begin match final_vars with
+       Some final_vars ->
+        assert(List.length vars_for_body = List.length final_vars);
+        let updated_vars = diff final_vars vars_for_body in
+        let n = List.length updated_vars in
+        let fun_ = Exp.fun_ Asttypes.Nolabel None
+                     (Pat.tuple [pat_of_var var1; pat_of_tuple_vars (take n vars_for_body)])
+                     (kond_is (exp_of_tuple_vars updated_vars)) in
+        let vars_for_rest = newVars n in
+        exp_of_prog
+          (fun expr -> kont (let_ vars_for_rest
+                               (Exp.apply (exp_of_var "map_iter")
+                                  [Asttypes.Nolabel, fun_;
+                                   Asttypes.Nolabel,
+                                   Exp.tuple [exp_of_var var0;
+                                              exp_of_tuple_vars (take n vars)]])
+                               expr))
+          (rest, vars_for_rest @ (drop n vars))
+     | None ->
+        let fun_ = Exp.fun_ Asttypes.Nolabel None
+                     (Pat.tuple [pat_of_var var1;
+                                 pat_of_tuple_vars vars_for_body])
+                     (kond_is (Exp.tuple [])) in
+        let vars_for_rest = newVars (List.length vars) in
+        exp_of_prog
+          (fun expr -> kont (let_ vars_for_rest
+                               (Exp.apply (exp_of_var "map_iter")
+                                  [Asttypes.Nolabel, fun_;
+                                   Asttypes.Nolabel,
+                                   Exp.tuple [exp_of_var var0; exp_of_tuple_vars vars]])
+                               expr))
+          (rest, vars_for_rest)
+     end
+  (* LOOP *)
+  | OneBlock ("LOOP", is) :: rest, var0 :: vars ->
+     let vars_for_body = newVars (List.length vars) in
+     let kond_is, final_vars = exp_of_prog init_kont (is, vars_for_body) in
+     begin match final_vars with
+       Some (produced_var :: final_vars) ->
+        assert(List.length vars_for_body = List.length final_vars);
+        let updated_vars = diff final_vars vars_for_body in
+        let n = List.length updated_vars in
+        let fun_ = Exp.fun_ Asttypes.Nolabel None
+                     (pat_of_tuple_vars (take n vars_for_body))
+                     (kond_is (Exp.tuple [exp_of_var produced_var;
+                                          exp_of_tuple_vars updated_vars])) in
+        let vars_for_rest = newVars n in
+        exp_of_prog
+          (fun expr -> kont (let_ vars_for_rest
+                               (Exp.apply (exp_of_var "loop")
+                                  [Asttypes.Nolabel, fun_;
+                                   Asttypes.Nolabel,
+                                   Exp.tuple [exp_of_var var0; exp_of_tuple_vars (take n vars)]])
+                               expr))
+          (rest, vars_for_rest @ (drop n vars))
+     | Some [] -> failwith "LOOP: Empty stack at the end of the body"
+     | None ->
+        let fun_ = Exp.fun_ Asttypes.Nolabel None
+                     (pat_of_tuple_vars vars_for_body)
+                     (kond_is (Exp.tuple [])) in
+        let vars_for_rest = newVars (List.length vars) in
+        exp_of_prog
+          (fun expr -> kont (let_ vars_for_rest
+                               (Exp.apply (exp_of_var "loop")
+                                  [Asttypes.Nolabel, fun_;
+                                   Asttypes.Nolabel,
+                                   Exp.tuple [exp_of_var var0; exp_of_tuple_vars vars]])
+                               expr))
+          (rest, vars_for_rest)
+     end
+  (* LOOP_LEFT, basically the same as MAP *)
+  | OneBlock ("LOOP_LEFT", is) :: rest, var0 :: vars ->
+     let var1, vars_for_body = newVar(), newVars (List.length vars) in
+     let kond_is, final_vars = exp_of_prog init_kont (is, var1 :: vars_for_body) in
+     begin match final_vars with
+       Some (var2 :: final_vars) ->
+        assert(List.length vars_for_body = List.length final_vars);
+        let updated_vars = diff final_vars vars_for_body in
+        let n = List.length updated_vars in
+        let fun_ = Exp.fun_ Asttypes.Nolabel None
+                     (Pat.tuple [pat_of_var var1; pat_of_tuple_vars (take n vars_for_body)])
+                     (kond_is (Exp.tuple [exp_of_var var2;
+                                          exp_of_tuple_vars updated_vars])) in
+        let vars_for_rest = newVars n in
+        exp_of_prog
+          (fun expr -> kont (let_ vars_for_rest
+                               (Exp.apply (exp_of_var "loop_left")
+                                  [Asttypes.Nolabel, fun_;
+                                   Asttypes.Nolabel,
+                                   Exp.tuple [exp_of_var var0; exp_of_tuple_vars (take n vars)]])
+                               expr))
+          (rest, vars_for_rest @ (drop n vars))
+     | Some [] -> failwith "LOOP: Empty stack at the end of the body"
+     | None ->
+        let fun_ = Exp.fun_ Asttypes.Nolabel None
+                     (Pat.tuple [pat_of_var var1; pat_of_tuple_vars vars_for_body])
+                     (kond_is (Exp.tuple [])) in
+        let vars_for_rest = newVars (List.length vars) in
+        exp_of_prog
+          (fun expr -> kont (let_ vars_for_rest
+                               (Exp.apply (exp_of_var "loop_left")
+                                  [Asttypes.Nolabel, fun_;
+                                   Asttypes.Nolabel,
+                                   Exp.tuple [exp_of_var var0; exp_of_tuple_vars vars]])
+                               expr))
+          (rest, vars_for_rest)
+     end
   (* branching instructions *)
   | TwoBlocks ("IF_LEFT", is1, is2) :: rest, var0 :: vars ->
      let var1 = newVar () in
@@ -168,6 +319,29 @@ let rec exp_of_prog kont = function
        (fun exp ->
          kont (let_ [lam] (Exp.apply (exp_of_var "lambda") [Asttypes.Nolabel, fun_]) exp))
        (rest, lam :: vars)
+  (* GET and UPDATE *)
+  | SimpleWithNum (("GET" | "UPDATE" as s), n) :: rest, vars ->
+     exp_of_prog kont (Simple (s ^ string_of_int n) :: rest, vars)
+  (* CREATE_CONTRACT *)
+  | CreateContract("CREATE_CONTRACT" as s, code) :: rest, vars ->
+     let body = exp_of_code code in
+     begin try
+         let funname, (n, m) = find_spec (String.lowercase_ascii s) in
+         let n = n - 1 in
+         assert(List.length vars >= 3);
+         let consumed_vars, untouched_vars = take n vars, drop n vars in
+         let produced_vars = newVars m in
+         exp_of_prog
+           (fun exp ->
+             kont (let_ produced_vars
+                     (Exp.apply (exp_of_var funname)
+                        ((Asttypes.Nolabel, body) ::
+                           (List.map (fun id -> Asttypes.Nolabel, exp_of_var id)
+                              consumed_vars)))
+                     exp))
+           (rest, produced_vars @ untouched_vars)
+       with Not_found -> failwith ("Instruction not implemented: " ^ s)
+     end
   (* General instructions consuming n values and producing m values *)
   | Simple s :: rest, vars -> begin
       try
@@ -183,7 +357,7 @@ let rec exp_of_prog kont = function
             kont (let_ produced_vars (call funname consumed_vars) exp))
           (rest, produced_vars @ untouched_vars)
      with Not_found -> failwith ("Instruction not implemented: " ^ s)
-     end
+    end
   and gen_branch kont rest var0 vars kont_body1 final_vars1 kont_body2 final_vars2 branch =
   match final_vars1, final_vars2 with
   | None, None ->
@@ -228,7 +402,7 @@ let rec exp_of_prog kont = function
                            exp))
        (rest, newvars @ drop num_newvars final_vars1)
     
-let exp_of_code (Code (optty, body)) =
+and exp_of_code (Code (optty, body)) =
   let kont, ids = exp_of_prog init_kont (body, ["param_st"]) in
   let body =
     (match ids with
@@ -251,9 +425,5 @@ let exp_of_code (Code (optty, body)) =
     | Some (param_ty, st_ty) ->
        Pat.constraint_ (pat_of_var "param_st") (Typ.tuple [param_ty; st_ty])
   in
-  Str.value Asttypes.Nonrecursive
-    [{ pvb_pat = pat_of_var "main";
-       pvb_expr = Exp.fun_ Asttypes.Nolabel None param body;
-       pvb_attributes = [];
-       pvb_loc = Location.none } ]
-
+  Exp.fun_ Asttypes.Nolabel None param body;
+  

@@ -7,7 +7,9 @@ type ('k, 't) big_map = ('k, 't) map
 type ('a, 'b) lambda
 
 val failwith : 'a -> 'b
-
+val loop : ('a -> bool * 'a) -> (bool * 'b) -> 'b
+val loop_left : ('a * 'b -> ('a, 'c) or_ * 'b) -> ('a, 'c) or_ * 'd -> 'd
+  
 (* generic comparison *)
 val eq : int -> bool
 val ge : int -> bool
@@ -53,6 +55,22 @@ val cdr : 'a * 'b -> 'b
 val pair : 'a -> 'b -> ('a, 'b) pair
 val unpair : ('a, 'b) pair -> 'a * 'b
 
+val get0 : 'a -> 'a
+val get1 : ('a, 'b) pair -> 'a
+val get2 : ('a, 'b) pair -> 'b
+val get3 : ('a, ('b, 'c) pair) pair -> 'b
+val get4 : ('a, ('b, 'c) pair) pair -> 'c
+val get5 : ('a, ('b, ('c, 'd) pair) pair) pair -> 'c
+val get6 : ('a, ('b, ('c, 'd) pair) pair) pair -> 'd
+
+val update0 : 'a -> 'b -> 'a
+val update1 : 'a1 -> ('a2, 'b) pair -> ('a1, 'b) pair
+val update2 : 'b1 -> ('a, 'b2) pair -> ('a, 'b2) pair
+val update3 : 'b1 -> ('a, ('b2, 'c) pair) pair -> ('a, ('b1, 'c) pair) pair 
+val update4 : 'c1 -> ('a, ('b, 'c2) pair) pair -> ('a, ('b, 'c1) pair) pair 
+val update5 : 'c1 -> ('a, ('b, ('c2, 'd) pair) pair) pair -> ('a, ('b, ('c1, 'd) pair) pair) pair 
+val update6 : 'd1 -> ('a, ('b, ('c, 'd2) pair) pair) pair -> ('a, ('b, ('c, 'd2) pair) pair) pair
+
 (* Operations on lambda *)
 val lambda : ('a -> 'b) -> ('a, 'b) lambda
 val exec : 'a -> ('a, 'b) lambda -> 'b
@@ -80,6 +98,8 @@ val right : 'b -> ('a, 'b) or_
 (* Operations on lists *)
 val cons : 'a -> 'a list -> 'a list
 val nil : 'a list
+val map_list : (('a * 'b) -> ('c * 'b)) -> 'a list * 'b -> 'c list * 'b
+val map_iter : (('a * 'b) -> 'b) -> 'a list * 'b -> 'b
 val size : 'a list -> nat
 
 (* Domain specific data types *)
@@ -99,6 +119,7 @@ type 'a sapling_transaction
 type 'a sapling_state
 type 'a ticket
 
+val create_contract : ('a * 'b -> operation list * 'b) -> key_hash option -> mutez -> 'b -> operation * address
 val transfer_tokens : 'a -> mutez -> 'a contract -> operation
 val set_delegate : key_hash option -> operation
 val balance : mutez

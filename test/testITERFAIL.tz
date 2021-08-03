@@ -1,0 +1,1 @@
+code { PUSH int 2; PUSH int 0; DIG 2; ITER { ADD; FAILWITH } }
