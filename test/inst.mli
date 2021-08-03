@@ -1,3 +1,5 @@
+exception Never
+
 type ('a, 'b) or_ = Left of 'a | Right of 'b
 type never
 type 'a set
@@ -74,6 +76,7 @@ val update6 : 'd1 -> ('a, ('b, ('c, 'd2) pair) pair) pair -> ('a, ('b, ('c, 'd2)
 (* Operations on lambda *)
 val lambda : ('a -> 'b) -> ('a, 'b) lambda
 val exec : 'a -> ('a, 'b) lambda -> 'b
+val apply : 'a -> (('a, 'b) pair, 'c) lambda -> ('b, 'c) lambda
 
 (* Operations on maps *)
 val empty_map : ('k, 'v) map
