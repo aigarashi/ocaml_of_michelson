@@ -130,31 +130,74 @@ let rec exp_of_prog kont = function
      exp_of_prog kont (rest, take n vars @ var1 :: drop n vars)
   (* MAP for lists *)
   | OneBlock ("MAP", is) :: rest, var0 :: vars ->
-     let var1, vars_for_body = newVar (), newVars (List.length vars) in
-     let kond_is, final_vars = exp_of_prog init_kont (is, var1 :: vars_for_body) in
+     let var1, parameters_for_body = newVar (), newVars (List.length vars) in
+     let kond_is, final_vars = exp_of_prog init_kont (is, var1 :: parameters_for_body) in
      begin match final_vars with
        Some (var2 :: final_vars) ->
-        assert(List.length vars_for_body = List.length final_vars);
+        assert(List.length parameters_for_body = List.length final_vars);
         let updated_vars = final_vars in  (* used to be: diff final_vars vars_for_body, which is wrong ;-) *)
         let n = List.length updated_vars in
+        let vars_for_rest = newVars n in
+
+        (* vars: variables on the stack (called xs)
+           parameters_for_body: what are fed to the body (called ys)
+           updated_vars: what are returned by each iteration (called
+           zs) vars_for_rest: variables to which the results are bound
+           (called ws) the length of each list is n
+
+           before optimization let ws = map (fun ys -> ... in zs) xs
+           in cont where cont is generated under stack ws
+
+           a variable at i-th position can be omitted from the
+           generated code if: ys[i] = zs[i] (it is not consumed) and
+           ys[i] doesn't appear in kond_is (it is not read)
+
+           ws to be used to generate cont is obtained by replacing the
+           i-th element with xs[i] 
+        *)
+        let dummy_body = kond_is (Exp.tuple []) in
+        let rec aux = function
+          (* input: xs, ys, zs, ws
+             output: xs', ys', zs', ws for let, ws for cont *)
+          | [], [], [], [] -> [], [], [], [], []
+          | x::xs, y::ys, z::zs, w::ws ->
+             let xs', ys', zs', ws1', ws2' = aux (xs, ys, zs, ws) in
+             if y = z && not (Inliner.occur y dummy_body) then (xs', ys', zs', ws1', x::ws2')
+             else (x::xs', y::ys', z::zs', w::ws1', w::ws2')
+        in
+        (* DEBUG *)
+        prerr_string "\nVARS:"; List.iter (fun x -> prerr_string (x ^" ")) vars;
+        prerr_string "\nPARAMS:"; List.iter (fun x -> prerr_string (x ^" ")) parameters_for_body;
+        prerr_string "\nBODY:"; List.iter (fun x -> prerr_string (x ^" ")) updated_vars;
+        prerr_string "\nREST:"; List.iter (fun x -> prerr_string (x ^" ")) vars_for_rest;
+        (* *)
+        let vars, parameters_for_body, updated_vars, let_bound_vars, vars_for_cont =
+          aux (vars, parameters_for_body, updated_vars, vars_for_rest) in
+        (* DEBUG *)
+        prerr_string "\nVARS':"; List.iter (fun x -> prerr_string (x ^" ")) vars;
+        prerr_string "\nPARAMS':"; List.iter (fun x -> prerr_string (x ^" ")) parameters_for_body;
+        prerr_string "\nBODY':"; List.iter (fun x -> prerr_string (x ^" ")) updated_vars;
+        prerr_string "\nLET:"; List.iter (fun x -> prerr_string (x ^" ")) let_bound_vars;
+        prerr_string "\nCONT:"; List.iter (fun x -> prerr_string (x ^" ")) vars_for_cont;
+        (* *)
         let body = kond_is (Exp.tuple [exp_of_var var2; exp_of_tuple_vars updated_vars]) in
         let fun_ = Exp.fun_ Asttypes.Nolabel None
-                     (Pat.tuple [pat_of_var var1; pat_of_tuple_vars (take n vars_for_body)]) body in
-        let vars_for_rest = newVars n in
+                     (Pat.tuple [pat_of_var var1; pat_of_tuple_vars parameters_for_body]) body in
+        let var3 = newVar () in
         exp_of_prog
-          (fun expr -> kont (let_ vars_for_rest
+          (fun expr -> kont (let_ (var3 :: let_bound_vars)
                                (Exp.apply (exp_of_var "map_list")
                                   [Asttypes.Nolabel, fun_;
                                    Asttypes.Nolabel,
                                    Exp.tuple [exp_of_var var0;
-                                              exp_of_tuple_vars (take n vars)]])
+                                              exp_of_tuple_vars vars]])
                                expr))
-          (rest, vars_for_rest @ (drop n vars))
+          (rest, var3 :: vars_for_cont)
      | Some [] -> failwith "MAP: Empty stack at the end of the body"
      | None ->
         let fun_ = Exp.fun_ Asttypes.Nolabel None
                      (Pat.tuple [pat_of_var var1;
-                                 pat_of_tuple_vars vars_for_body])
+                                 pat_of_tuple_vars parameters_for_body])
                      (kond_is (Exp.tuple [])) in
         let vars_for_rest = newVars (List.length vars) in
         exp_of_prog
