@@ -173,7 +173,7 @@ let rec exp_of_prog kont = function
      begin match final_vars with
        Some final_vars ->
         assert(List.length vars_for_body = List.length final_vars);
-        let updated_vars = diff final_vars vars_for_body in
+        let updated_vars = final_vars in   (* used to be: diff final_vars vars_for_body, which is wrong ;-) *)
         let n = List.length updated_vars in
         let fun_ = Exp.fun_ Asttypes.Nolabel None
                      (Pat.tuple [pat_of_var var1; pat_of_tuple_vars (take n vars_for_body)])
@@ -210,7 +210,7 @@ let rec exp_of_prog kont = function
      begin match final_vars with
        Some (produced_var :: final_vars) ->
         assert(List.length vars_for_body = List.length final_vars);
-        let updated_vars = diff final_vars vars_for_body in
+        let updated_vars = final_vars in   (* used to be: diff final_vars vars_for_body, which is wrong ;-) *)
         let n = List.length updated_vars in
         let fun_ = Exp.fun_ Asttypes.Nolabel None
                      (pat_of_tuple_vars (take n vars_for_body))
