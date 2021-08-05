@@ -256,30 +256,35 @@ let rec exp_of_prog kont = function
      end
   (* LOOP *)
   | OneBlock ("LOOP", is) :: rest, var0 :: vars ->
-     let vars_for_body = newVars (List.length vars) in
-     let kond_is, final_vars = exp_of_prog init_kont (is, vars_for_body) in
+     let parameters_for_body = newVars (List.length vars) in
+     let kond_is, final_vars = exp_of_prog init_kont (is, parameters_for_body) in
      begin match final_vars with
        Some (produced_var :: final_vars) ->
-        assert(List.length vars_for_body = List.length final_vars);
+        assert(List.length parameters_for_body = List.length final_vars);
         let updated_vars = final_vars in   (* used to be: diff final_vars vars_for_body, which is wrong ;-) *)
         let n = List.length updated_vars in
-        let fun_ = Exp.fun_ Asttypes.Nolabel None
-                     (pat_of_tuple_vars (take n vars_for_body))
-                     (kond_is (Exp.tuple [exp_of_var produced_var;
-                                          exp_of_tuple_vars updated_vars])) in
         let vars_for_rest = newVars n in
+
+        let vars, parameters_for_body, updated_vars, let_bound_vars, vars_for_cont =
+          optimize_stack_for_block (kond_is (Exp.tuple []))
+            (vars, parameters_for_body, updated_vars, vars_for_rest) in
+
+        let body = kond_is (Exp.tuple [exp_of_var produced_var;
+                                       exp_of_tuple_vars updated_vars]) in
+        let fun_ = Exp.fun_ Asttypes.Nolabel None
+                     (pat_of_tuple_vars parameters_for_body) body in
         exp_of_prog
-          (fun expr -> kont (let_ vars_for_rest
+          (fun expr -> kont (let_ let_bound_vars
                                (Exp.apply (exp_of_var "loop")
                                   [Asttypes.Nolabel, fun_;
                                    Asttypes.Nolabel,
-                                   Exp.tuple [exp_of_var var0; exp_of_tuple_vars (take n vars)]])
+                                   Exp.tuple [exp_of_var var0; exp_of_tuple_vars vars]])
                                expr))
-          (rest, vars_for_rest @ (drop n vars))
+          (rest, vars_for_cont)
      | Some [] -> failwith "LOOP: Empty stack at the end of the body"
      | None ->
         let fun_ = Exp.fun_ Asttypes.Nolabel None
-                     (pat_of_tuple_vars vars_for_body)
+                     (pat_of_tuple_vars parameters_for_body)
                      (kond_is (Exp.tuple [])) in
         let vars_for_rest = newVars (List.length vars) in
         exp_of_prog

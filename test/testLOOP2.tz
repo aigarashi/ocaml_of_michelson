@@ -1,0 +1,9 @@
+code {
+  PUSH int 0;
+  PUSH int 1;
+  PUSH int 2;
+  PUSH int 3;
+  PUSH int 4;
+  DIG 5;
+  LOOP { DUP 4; ADD; DUP 3; EQ }
+}
