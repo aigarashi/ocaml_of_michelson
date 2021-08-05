@@ -1,0 +1,2 @@
+code { PUSH int 0; SWAP; ITER { DROP } }
+
