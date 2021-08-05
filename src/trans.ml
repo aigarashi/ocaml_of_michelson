@@ -44,6 +44,35 @@ let find_spec =
            | Not_found -> let s = s ^ "_" in (s, List.assoc s InstSpec.v)
 
 
+(* The following function optimize_stack_for_block is to reduce the
+   number of variables passed to a block given to higher-order
+   instructions such as MAP and ITER.
+
+Before optimization, OCaml code correpoonding to MAP takes the
+   following form:
+
+   let ws = map (fun ys -> ... in zs) xs in cont
+
+where cont is generated under stack ws
+
+A variable at i-th position can be omitted from the generated code if:
+   ys[i] = zs[i] (it is not consumed) and ys[i] doesn't appear in
+   kond_is (it is not read)
+
+Since ws may be reduced, the variable sequence to be used to generate
+   cont is different from ws.  It obtained by replacing the i-th
+   element with xs[i].
+
+So, this function takes the original xs, ys, zs, ws and returns
+   reduced xs', ys', zs', ws' with ws2', which is used to translate
+   the continuation.  *)
+let rec optimize_stack_for_block body = function
+  | [], [], [], [] -> [], [], [], [], []
+  | x::xs, y::ys, z::zs, w::ws ->
+     let xs', ys', zs', ws1', ws2' = optimize_stack_for_block body (xs, ys, zs, ws) in
+     if y = z && not (Inliner.occur y body) then (xs', ys', zs', ws1', x::ws2')
+     else (x::xs', y::ys', z::zs', w::ws1', w::ws2')
+
 (* translator exp_of_prog
  kont represents instructions already processed *)
 let rec exp_of_prog kont = function
@@ -138,33 +167,6 @@ let rec exp_of_prog kont = function
         let updated_vars = final_vars in  (* used to be: diff final_vars vars_for_body, which is wrong ;-) *)
         let n = List.length updated_vars in
         let vars_for_rest = newVars n in
-
-        (* vars: variables on the stack (called xs)
-           parameters_for_body: what are fed to the body (called ys)
-           updated_vars: what are returned by each iteration (called
-           zs) vars_for_rest: variables to which the results are bound
-           (called ws) the length of each list is n
-
-           before optimization let ws = map (fun ys -> ... in zs) xs
-           in cont where cont is generated under stack ws
-
-           a variable at i-th position can be omitted from the
-           generated code if: ys[i] = zs[i] (it is not consumed) and
-           ys[i] doesn't appear in kond_is (it is not read)
-
-           ws to be used to generate cont is obtained by replacing the
-           i-th element with xs[i] 
-        *)
-        let dummy_body = kond_is (Exp.tuple []) in
-        let rec aux = function
-          (* input: xs, ys, zs, ws
-             output: xs', ys', zs', ws for let, ws for cont *)
-          | [], [], [], [] -> [], [], [], [], []
-          | x::xs, y::ys, z::zs, w::ws ->
-             let xs', ys', zs', ws1', ws2' = aux (xs, ys, zs, ws) in
-             if y = z && not (Inliner.occur y dummy_body) then (xs', ys', zs', ws1', x::ws2')
-             else (x::xs', y::ys', z::zs', w::ws1', w::ws2')
-        in
         (* DEBUG *)
         prerr_string "\nVARS:"; List.iter (fun x -> prerr_string (x ^" ")) vars;
         prerr_string "\nPARAMS:"; List.iter (fun x -> prerr_string (x ^" ")) parameters_for_body;
@@ -172,7 +174,8 @@ let rec exp_of_prog kont = function
         prerr_string "\nREST:"; List.iter (fun x -> prerr_string (x ^" ")) vars_for_rest;
         (* *)
         let vars, parameters_for_body, updated_vars, let_bound_vars, vars_for_cont =
-          aux (vars, parameters_for_body, updated_vars, vars_for_rest) in
+          optimize_stack_for_block (kond_is (Exp.tuple []))
+            (vars, parameters_for_body, updated_vars, vars_for_rest) in
         (* DEBUG *)
         prerr_string "\nVARS':"; List.iter (fun x -> prerr_string (x ^" ")) vars;
         prerr_string "\nPARAMS':"; List.iter (fun x -> prerr_string (x ^" ")) parameters_for_body;
