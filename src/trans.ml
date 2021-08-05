@@ -164,26 +164,24 @@ let rec exp_of_prog kont = function
      begin match final_vars with
        Some (var2 :: final_vars) ->
         assert(List.length parameters_for_body = List.length final_vars);
-        let updated_vars = final_vars in  (* used to be: diff final_vars vars_for_body, which is wrong ;-) *)
-        let n = List.length updated_vars in
-        let vars_for_rest = newVars n in
-        (* DEBUG *)
+        let vars_for_rest = newVars (List.length final_vars) in
+        (* DEBUG
         prerr_string "\nVARS:"; List.iter (fun x -> prerr_string (x ^" ")) vars;
         prerr_string "\nPARAMS:"; List.iter (fun x -> prerr_string (x ^" ")) parameters_for_body;
-        prerr_string "\nBODY:"; List.iter (fun x -> prerr_string (x ^" ")) updated_vars;
+        prerr_string "\nBODY:"; List.iter (fun x -> prerr_string (x ^" ")) final_vars;
         prerr_string "\nREST:"; List.iter (fun x -> prerr_string (x ^" ")) vars_for_rest;
-        (* *)
-        let vars, parameters_for_body, updated_vars, let_bound_vars, vars_for_cont =
+        *)
+        let vars, parameters_for_body, final_vars, let_bound_vars, vars_for_cont =
           optimize_stack_for_block (kond_is (Exp.tuple []))
-            (vars, parameters_for_body, updated_vars, vars_for_rest) in
-        (* DEBUG *)
+            (vars, parameters_for_body, final_vars, vars_for_rest) in
+        (* DEBUG
         prerr_string "\nVARS':"; List.iter (fun x -> prerr_string (x ^" ")) vars;
         prerr_string "\nPARAMS':"; List.iter (fun x -> prerr_string (x ^" ")) parameters_for_body;
-        prerr_string "\nBODY':"; List.iter (fun x -> prerr_string (x ^" ")) updated_vars;
+        prerr_string "\nBODY':"; List.iter (fun x -> prerr_string (x ^" ")) final_vars;
         prerr_string "\nLET:"; List.iter (fun x -> prerr_string (x ^" ")) let_bound_vars;
         prerr_string "\nCONT:"; List.iter (fun x -> prerr_string (x ^" ")) vars_for_cont;
-        (* *)
-        let body = kond_is (Exp.tuple [exp_of_var var2; exp_of_tuple_vars updated_vars]) in
+        *)
+        let body = kond_is (Exp.tuple [exp_of_var var2; exp_of_tuple_vars final_vars]) in
         let fun_ = Exp.fun_ Asttypes.Nolabel None
                      (Pat.tuple [pat_of_var var1; pat_of_tuple_vars parameters_for_body]) body in
         let var3 = newVar () in
@@ -219,15 +217,13 @@ let rec exp_of_prog kont = function
      begin match final_vars with
        Some final_vars ->
         assert(List.length parameters_for_body = List.length final_vars);
-        let updated_vars = final_vars in   (* used to be: diff final_vars vars_for_body, which is wrong ;-) *)
-        let n = List.length updated_vars in
-        let vars_for_rest = newVars n in
+        let vars_for_rest = newVars (List.length final_vars) in
 
-        let vars, parameters_for_body, updated_vars, let_bound_vars, vars_for_cont =
+        let vars, parameters_for_body, final_vars, let_bound_vars, vars_for_cont =
           optimize_stack_for_block (kond_is (Exp.tuple []))
-            (vars, parameters_for_body, updated_vars, vars_for_rest) in
+            (vars, parameters_for_body, final_vars, vars_for_rest) in
 
-        let body = kond_is (exp_of_tuple_vars updated_vars) in
+        let body = kond_is (exp_of_tuple_vars final_vars) in
         let fun_ = Exp.fun_ Asttypes.Nolabel None
                      (Pat.tuple [pat_of_var var1; pat_of_tuple_vars parameters_for_body]) body in
         exp_of_prog
@@ -261,16 +257,14 @@ let rec exp_of_prog kont = function
      begin match final_vars with
        Some (produced_var :: final_vars) ->
         assert(List.length parameters_for_body = List.length final_vars);
-        let updated_vars = final_vars in   (* used to be: diff final_vars vars_for_body, which is wrong ;-) *)
-        let n = List.length updated_vars in
-        let vars_for_rest = newVars n in
+        let vars_for_rest = newVars (List.length final_vars) in
 
-        let vars, parameters_for_body, updated_vars, let_bound_vars, vars_for_cont =
+        let vars, parameters_for_body, final_vars, let_bound_vars, vars_for_cont =
           optimize_stack_for_block (kond_is (Exp.tuple []))
-            (vars, parameters_for_body, updated_vars, vars_for_rest) in
+            (vars, parameters_for_body, final_vars, vars_for_rest) in
 
         let body = kond_is (Exp.tuple [exp_of_var produced_var;
-                                       exp_of_tuple_vars updated_vars]) in
+                                       exp_of_tuple_vars final_vars]) in
         let fun_ = Exp.fun_ Asttypes.Nolabel None
                      (pat_of_tuple_vars parameters_for_body) body in
         exp_of_prog
@@ -303,16 +297,14 @@ let rec exp_of_prog kont = function
      begin match final_vars with
        Some (var2 :: final_vars) ->
         assert(List.length parameters_for_body = List.length final_vars);
-        let updated_vars = final_vars in   (* used to be: diff final_vars vars_for_body, which is wrong ;-) *)
-        let n = List.length updated_vars in
-        let vars_for_rest = newVars n in
+        let vars_for_rest = newVars (List.length final_vars) in
 
-        let vars, parameters_for_body, updated_vars, let_bound_vars, vars_for_cont =
+        let vars, parameters_for_body, final_vars, let_bound_vars, vars_for_cont =
           optimize_stack_for_block (kond_is (Exp.tuple []))
-            (vars, parameters_for_body, updated_vars, vars_for_rest) in
+            (vars, parameters_for_body, final_vars, vars_for_rest) in
 
         let body = kond_is (Exp.tuple [exp_of_var var2;
-                                       exp_of_tuple_vars updated_vars]) in
+                                       exp_of_tuple_vars final_vars]) in
         let fun_ = Exp.fun_ Asttypes.Nolabel None
                      (Pat.tuple [pat_of_var var1; pat_of_tuple_vars (parameters_for_body)]) body in
         let var3 = newVar () in
