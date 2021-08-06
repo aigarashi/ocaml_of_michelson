@@ -1,0 +1,5 @@
+code {
+  PUSH int 42;
+  SWAP;
+  MAP { DUP 2; ADD }
+}

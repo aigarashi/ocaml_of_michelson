@@ -5,6 +5,23 @@ open MySupport
 open Ast_helper
 
 exception NonLinear
+exception Found
+
+let rec occur_mapper id =
+  { default_mapper with
+    expr = fun mapper expr ->
+           match expr with
+           | { pexp_desc = Pexp_ident {txt=Lident id'} } when id = id' ->
+              raise Found
+           | other -> default_mapper.expr mapper other }
+
+let occur id expr =
+  let mapper = occur_mapper id in
+  try
+    ignore (mapper.expr mapper expr);
+    false
+  with
+    Found -> true
 
 let rec subst_mapper id e seen =
   { default_mapper with

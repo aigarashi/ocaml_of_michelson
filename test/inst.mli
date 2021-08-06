@@ -9,8 +9,8 @@ type ('k, 't) big_map = ('k, 't) map
 type ('a, 'b) lambda
 
 val failwith : 'a -> 'b
-val loop : ('a -> bool * 'a) -> (bool * 'b) -> 'b
-val loop_left : ('a * 'b -> ('a, 'c) or_ * 'b) -> ('a, 'c) or_ * 'd -> 'd
+val loop : ('a -> bool * 'a) -> (bool * 'a) -> 'a
+val loop_left : ('a * 'b -> ('a, 'c) or_ * 'b) -> ('a, 'c) or_ * 'b -> 'c * 'b
   
 (* generic comparison *)
 val eq : int -> bool
