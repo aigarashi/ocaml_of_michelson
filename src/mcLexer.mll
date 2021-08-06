@@ -24,6 +24,7 @@ rule main = parse
 | "storage" { McParser.STORAGE }
 | "True" { McParser.BOOL true }
 | "False" { McParser.BOOL false }
+| "Unit" { McParser.UNIT }
 
 | ['A'-'Z' '_' ]+
     { McParser.MNEMONIC (Lexing.lexeme lexbuf) }
