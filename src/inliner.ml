@@ -103,9 +103,11 @@ let remove_trivial_let_mapper =
               (* let () = e1 in e2  ==> e1; e2 *)
               let rhs' = mapper.expr mapper rhs in
               let body' = mapper.expr mapper body in
-              (match body' with
-                 (* let () = e in ()  ==> e *)
-                 { pexp_desc = Pexp_tuple [] } -> rhs'
+              (match rhs', body' with
+               | (* let () = () in e ==> e *)
+                 { pexp_desc = Pexp_tuple [] }, _ -> body'
+               | (* let () = e in ()  ==> e *)
+                 _, { pexp_desc = Pexp_tuple [] } -> rhs'
                | _ -> Exp.sequence rhs' body')
            | other -> default_mapper.expr mapper other }
 
