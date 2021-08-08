@@ -60,3 +60,5 @@ So, a potential bug of the translator may be overlooked.
 * `GET n` and `UPDATE n` assumes `n` is less than 7.  (See `test/inst.mli` to see why.)
 
 * Macros are not supported yet.
+
+* Compound literals such as `{1; 2; 3}` are not supported yet.
