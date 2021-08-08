@@ -469,8 +469,7 @@ and exp_of_code (Code (optty, body)) =
      | Some [] -> failwith "exp_of_code: Stack is empty!"
      | Some (x :: _) -> kont (exp_of_tuple_vars [x])
      | None -> kont (exp_of_tuple_vars []))
-    |> Inliner.linear
-    |> Inliner.remove_trivial_let
+    |> Inliner.simplify_let
     |> Inliner.tidy_up_if
   in
   let body =
