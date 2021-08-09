@@ -27,6 +27,12 @@ rule main = parse
 | "True" { McParser.BOOL true }
 | "False" { McParser.BOOL false }
 | "Unit" { McParser.UNIT }
+| "Pair" { McParser.PAIR }
+| "Left" { McParser.LEFT }
+| "Right" { McParser.RIGHT }
+| "Some" { McParser.SOME }
+| "None" { McParser.NONE }
+| "Elt" { McParser.ELT }
 
 | ['A'-'Z' '_' ]+
     { McParser.MNEMONIC (Lexing.lexeme lexbuf) }

@@ -80,6 +80,7 @@ val apply : 'a -> (('a, 'b) pair, 'c) lambda -> ('b, 'c) lambda
 
 (* Operations on maps *)
 val empty_map : ('k, 'v) map
+val map_of_assoc : ('k * 'v) list -> ('k, 'v) map  (* for literal map expressions *)
 
 (* Operations on big_maps *)
 val empty_big_map : ('k, 'v) big_map
@@ -102,7 +103,7 @@ val cons : 'a -> 'a list -> 'a list
 val nil : 'a list
 val map_list : (('a * 'b) -> ('c * 'b)) -> 'a list * 'b -> 'c list * 'b
 val map_iter : (('a * 'b) -> 'b) -> 'a list * 'b -> 'b
-val size : 'a list -> nat
+(* val size : 'a list -> nat *)
 
 (* Domain specific data types *)
 type timestamp = int (* for simplicity *)

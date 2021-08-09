@@ -1,0 +1,1 @@
+code { PUSH (or int string) (Left 3); PUSH (or int string) (Right "foo") }

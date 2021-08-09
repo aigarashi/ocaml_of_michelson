@@ -1,0 +1,3 @@
+code { PUSH (map int int) { Elt 1 2; Elt 2 3 };
+       PUSH (map string int) { Elt "foo" 2; Elt "bar" 3 ; };
+}
