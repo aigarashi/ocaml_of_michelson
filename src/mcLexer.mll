@@ -12,6 +12,8 @@ rule main = parse
 
 | ['0'-'9']+
     { McParser.INTV (Lexing.lexeme lexbuf) }
+| "0x" ['0'-'9' 'a'-'f']+
+    { McParser.INTV (Lexing.lexeme lexbuf) }
 
 | "(" { McParser.LPAREN }
 | ")" { McParser.RPAREN }
