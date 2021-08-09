@@ -62,6 +62,6 @@ So, a potential bug of the translator may be overlooked.
 * Macros are not supported yet.
 
 * Some forms for compound literals are not supported:
-    * `{1, "foo", True}` for tuples.
+    * `{1; "foo"; True}` for tuples.
     * `{}` for the empty map (it is always a list).
     * lambdas.
