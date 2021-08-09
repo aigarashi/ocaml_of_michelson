@@ -1,1 +1,1 @@
-code { PUSH int 0xff }
+code { PUSH int -0xff; PUSH int -3; ADD }

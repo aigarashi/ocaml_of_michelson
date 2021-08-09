@@ -10,9 +10,9 @@ rule main = parse
 | ['%' ':'] ['A'-'Z' 'a'-'z' '_']+  { main lexbuf }
 | '#' (_ # '\n')* '\n' { main lexbuf }
 
-| ['0'-'9']+
+| "-"? ['0'-'9']+
     { McParser.INTV (Lexing.lexeme lexbuf) }
-| "0x" ['0'-'9' 'a'-'f' 'A'-'F']+
+| "-"? "0x" ['0'-'9' 'a'-'f' 'A'-'F']+
     { McParser.INTV (Lexing.lexeme lexbuf) }
 
 | "(" { McParser.LPAREN }
