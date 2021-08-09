@@ -1,0 +1,1 @@
+code { PUSH (pair int (pair int int)) (Pair 0 1 2) }

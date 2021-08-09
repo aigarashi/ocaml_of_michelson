@@ -10,7 +10,9 @@ rule main = parse
 | ['%' ':'] ['A'-'Z' 'a'-'z' '_']+  { main lexbuf }
 | '#' (_ # '\n')* '\n' { main lexbuf }
 
-| ['0'-'9']+
+| "-"? ['0'-'9']+
+    { McParser.INTV (Lexing.lexeme lexbuf) }
+| "-"? "0x" ['0'-'9' 'a'-'f' 'A'-'F']+
     { McParser.INTV (Lexing.lexeme lexbuf) }
 
 | "(" { McParser.LPAREN }
@@ -25,6 +27,12 @@ rule main = parse
 | "True" { McParser.BOOL true }
 | "False" { McParser.BOOL false }
 | "Unit" { McParser.UNIT }
+| "Pair" { McParser.PAIR }
+| "Left" { McParser.LEFT }
+| "Right" { McParser.RIGHT }
+| "Some" { McParser.SOME }
+| "None" { McParser.NONE }
+| "Elt" { McParser.ELT }
 
 | ['A'-'Z' '_' ]+
     { McParser.MNEMONIC (Lexing.lexeme lexbuf) }
