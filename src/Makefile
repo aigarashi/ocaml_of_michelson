@@ -43,7 +43,7 @@ mcLexer.ml: mcLexer.mll
 # Clean up
 clean:
 	rm -f $(PROGNAME)
-	rm -f *.cm[iox] *.o *~ mcParser.ml mcPparser.mli parser.output mcLexer.ml .depend
+	rm -f *.cm[iox] *.o *~ mcParser.ml mcParser.mli parser.output mcLexer.ml .depend
 
 # Dependencies
 depend:: $(DEPEND)
