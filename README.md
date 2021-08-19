@@ -20,20 +20,13 @@ will build `ocaml_of_michelson` in `src`.
 ## Usage
 
 ```
-ocaml_of_michelson
-```
-(There is no available option.)
-
-It reads a Michelson script from stdin.
-The output is written to stdout and debug messages are also written to stderr.
-So, typical usage would be:
-
-```
-ocaml_of_michelson < foo.tz > foo.ml
+ocaml_of_michelson [-spec spec_file] [-o output_file] [michelson_file]
 ```
 
-The output file should typecheck with `test/inst.mli`.  (There is no
-implementation for `inst.mli`, so the generated code cannot run.)
+It reads a Michelson script from `michelson_file` (or stdin if not specified).
+The output is written to `output_file` (or stdout if `-o` is omitted); debug messages are also written to stderr.
+
+The option `-spec` (default `./inst.mli`) specifies an OCaml interface file that describes the OCaml types of Michelson instructions.  The output file should typecheck with it.
 
 ## Test
 
