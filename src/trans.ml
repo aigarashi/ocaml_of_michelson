@@ -40,8 +40,8 @@ let init_kont exp = exp
 let find_spec =
   (* the instruction name maybe a keyword, in which case an underscore
      is added to the function name in test/inst.mli *)
-  fun s -> try (s, List.assoc s InstSpec.v) with
-           | Not_found -> let s = s ^ "_" in (s, List.assoc s InstSpec.v)
+  fun s -> try (s, List.assoc s !InstSpec.v) with
+           | Not_found -> let s = s ^ "_" in (s, List.assoc s !InstSpec.v)
 
 
 (* The following function optimize_stack_for_block is to reduce the

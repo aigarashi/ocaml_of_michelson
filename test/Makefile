@@ -9,7 +9,7 @@ inst.cmi : inst.mli
 	ocamlopt -c $<
 
 %.ml: %.tz inst.cmi
-	sed -n '/^code/,$$p' < $< | $(OM) > $@
+	sed -n '/^code/,$$p' < $< | $(OM) -o $@
 	ocamlopt -i $@
 
 clean:
