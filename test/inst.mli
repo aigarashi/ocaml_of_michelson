@@ -48,7 +48,7 @@ val lsr_ : int -> int -> int (* keyword *)
 
 (* operations on strings *)
 val concat : string -> string -> string
-val size : string -> int
+(* val size : string -> int *)
 val slice : nat -> nat -> string -> string option
 
 (* Operations on pairs and right combs *)
@@ -81,6 +81,7 @@ val apply : 'a -> (('a, 'b) pair, 'c) lambda -> ('b, 'c) lambda
 (* Operations on maps *)
 val empty_map : ('k, 'v) map
 val map_of_assoc : ('k * 'v) list -> ('k, 'v) map  (* for literal map expressions *)
+val size : ('k, 'v) map -> int
 
 (* Operations on big_maps *)
 val empty_big_map : ('k, 'v) big_map
