@@ -1,5 +1,4 @@
 open Ast_helper
-open Syntax
 open Trans
 open MySupport
 
@@ -11,7 +10,7 @@ let speclist =
   [("-spec", Arg.Set_string input_file, "Set instruction spec file (default: ./inst.mli)");
    ("-o", Arg.Set_string output_file, "Set output file name")]
 
-let rec read_trans_print () =
+let read_trans_print () =
   (* parse the arguments *)
   Arg.parse speclist (fun s -> input_file := s) usage_msg;
   (* parse the spec file *)

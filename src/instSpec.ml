@@ -5,7 +5,7 @@ open Parsetree
     where ty is not a function type *)
 
 let rec spec_of_ty = function
-  | Ptyp_arrow (_, _, {ptyp_desc = res_ty}) ->
+  | Ptyp_arrow (_, _, {ptyp_desc = res_ty; _}) ->
      let consume, produce = spec_of_ty res_ty in
      (consume + 1, produce)
   | Ptyp_tuple tys -> (0, List.length tys)
@@ -16,9 +16,10 @@ let rec spec_of_item = function
   | { psig_desc =
         Psig_value {
             pval_name = name;
-            pval_type = { ptyp_desc = ty }
-          }
-    } :: rest ->
+            pval_type = { ptyp_desc = ty; _};
+            _
+          };
+      _ } :: rest ->
      let (consume, produce) = spec_of_ty ty in
      prerr_string name.txt; prerr_int consume; prerr_string ","; prerr_int produce; prerr_newline();
      (name.txt, spec_of_ty ty) :: spec_of_item rest

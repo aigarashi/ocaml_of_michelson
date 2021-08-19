@@ -7,11 +7,11 @@ open Ast_helper
 exception NonLinear
 exception Found
 
-let rec occur_mapper id =
+let occur_mapper id =
   { default_mapper with
     expr = fun mapper expr ->
            match expr with
-           | { pexp_desc = Pexp_ident {txt=Lident id'} } when id = id' ->
+           | { pexp_desc = Pexp_ident {txt=Lident id'; _}; _} when id = id' ->
               raise Found
            | other -> default_mapper.expr mapper other }
 
@@ -23,11 +23,11 @@ let occur id expr =
   with
     Found -> true
 
-let rec subst_mapper id e seen =
+let subst_mapper id e seen =
   { default_mapper with
     expr = fun mapper expr ->
            match expr with
-           | { pexp_desc = Pexp_ident {txt=Lident id'} } when id = id' ->
+           | { pexp_desc = Pexp_ident {txt=Lident id'; _} ;_} when id = id' ->
               if !seen then raise NonLinear
               else seen := true; e
            | other -> default_mapper.expr mapper other }
@@ -41,7 +41,7 @@ let rec simultaneous_subst pats rhss body =
   assert (List.length pats = List.length rhss);
   match pats, rhss with
   | [], [] -> ([], [], body)
-  | ({ppat_desc = Ppat_var {txt=id}} as pat) :: restpats, expr :: restrhss ->
+  | ({ppat_desc = Ppat_var {txt=id; _}; _} as pat) :: restpats, expr :: restrhss ->
      (* prerr_string ("simultaneous_subst: trying " ^ id ^ "\n"); *)
      let newpats, newrhss, newbody = simultaneous_subst restpats restrhss body in
      begin try newpats, newrhss, subst id expr newbody with
@@ -51,6 +51,7 @@ let rec simultaneous_subst pats rhss body =
   | pat :: restpats, expr :: restrhss ->
      let newpats, newrhss, newbody = simultaneous_subst restpats restrhss body in
      pat :: newpats, expr :: newrhss, newbody
+  | _, _ -> failwith "simultaneous_subst"
 
 let simplify_let_mapper =
   { default_mapper with
@@ -58,9 +59,10 @@ let simplify_let_mapper =
            match expr with
            | { pexp_desc =
                  Pexp_let (Nonrecursive,
-                           [{pvb_pat = {ppat_desc = Ppat_var {txt=id}};
-                             pvb_expr = e;}],
-                           body) } ->
+                           [{pvb_pat = {ppat_desc = Ppat_var {txt=id; _}; _};
+                             pvb_expr = e; _}],
+                           body);
+               _} ->
               let inlined_body = mapper.expr mapper body in
               let inlined_e = mapper.expr mapper e in
               begin
@@ -69,24 +71,28 @@ let simplify_let_mapper =
               end
            | { pexp_desc =
                  Pexp_let (Nonrecursive,
-                           [{pvb_pat = {ppat_desc = Ppat_tuple []};
-                             pvb_expr = rhs}],
-                           body) } ->
+                           [{pvb_pat = {ppat_desc = Ppat_tuple []; _};
+                             pvb_expr = rhs;
+                             _}],
+                           body);
+               _} ->
               (* let () = e1 in e2 *)
               let rhs' = mapper.expr mapper rhs in
               let body' = mapper.expr mapper body in
               (match rhs', body' with
                | (* let () = () in e ==> e *)
-                 { pexp_desc = Pexp_tuple [] }, _ -> body'
+                 { pexp_desc = Pexp_tuple []; _}, _ -> body'
                | (* let () = e in ()  ==> e *)
-                 _, { pexp_desc = Pexp_tuple [] } -> rhs'
+                 _, { pexp_desc = Pexp_tuple []; _} -> rhs'
                | (* let () = e1 in e2 ==> e1; e2 *)
                  _ -> Exp.sequence rhs' body')
            | { pexp_desc =
                  Pexp_let (Nonrecursive,
-                           [{pvb_pat = {ppat_desc = Ppat_tuple pats};
-                             pvb_expr = {pexp_desc = Pexp_tuple rhss}}],
-                           body) } ->
+                           [{pvb_pat = {ppat_desc = Ppat_tuple pats; _};
+                             pvb_expr = {pexp_desc = Pexp_tuple rhss; _};
+                             _}],
+                           body);
+               _} ->
               let inlined_body = mapper.expr mapper body in
               let inlined_rhss = List.map (mapper.expr mapper) rhss in
               (* DEBUG
@@ -113,14 +119,14 @@ let tidy_up_if_mapper =
   { default_mapper with
     expr = fun mapper expr ->
            match expr with
-           | { pexp_desc = Pexp_ifthenelse (expr1, expr2, Some expr3) } ->
+           | { pexp_desc = Pexp_ifthenelse (expr1, expr2, Some expr3); _} ->
               begin match mapper.expr mapper expr2 with
-              | { pexp_desc = Pexp_tuple [] } ->
+              | { pexp_desc = Pexp_tuple []; _} ->
                  let expr1 = Exp.apply (exp_of_var "not") [Asttypes.Nolabel, expr1] in
                  Exp.ifthenelse expr1 (mapper.expr mapper expr3) None
               | expr2' ->
                  begin match mapper.expr mapper expr3 with
-                 | { pexp_desc = Pexp_tuple [] } ->
+                 | { pexp_desc = Pexp_tuple []; _} ->
                     Exp.ifthenelse expr1 expr2' None
                  | expr3' -> Exp.ifthenelse expr1 expr2' (Some expr3')
                  end

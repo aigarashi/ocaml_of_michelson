@@ -16,7 +16,7 @@ let rec take n l =
 
 let rec drop n l =
   if n = 0 then l
-  else match l with [] -> failwith "Take" | h :: t -> drop (n-1) t
+  else match l with [] -> failwith "Take" | _ :: t -> drop (n-1) t
 
 (* pretty printing *)
 let rec string_of_ids = function
@@ -31,7 +31,7 @@ let diff vars1 vars2 =
   let rev_vars2 = List.rev vars2 in
   let rec diff_aux = function
     | x :: vars1, y :: vars2 when x = y -> diff_aux (vars1, vars2)
-    | [], vars2 -> []
+    | [], _ -> []
     | vars1, _ -> vars1
   in List.rev (diff_aux (rev_vars1, rev_vars2))
 
@@ -72,6 +72,7 @@ let rec optimize_stack_for_block body = function
      let xs', ys', zs', ws1', ws2' = optimize_stack_for_block body (xs, ys, zs, ws) in
      if y = z && not (Inliner.occur y body) then (xs', ys', zs', ws1', x::ws2')
      else (x::xs', y::ys', z::zs', w::ws1', w::ws2')
+  | _ -> failwith "optimize_stack_for_block"
 
 (* translator exp_of_prog
  kont represents instructions already processed *)
@@ -89,13 +90,13 @@ let rec exp_of_prog kont = function
          kont (let_ [var0] c exp))
        (rest, var0 :: vars)
   (* FAILWITH is a special instruction *)
-  | Simple "FAILWITH" :: rest, var0 :: vars ->
-     ((fun exp -> kont (call "failwith" [var0])), None)
+  | Simple "FAILWITH" :: _, var0 :: _ ->
+     ((fun _ -> kont (call "failwith" [var0])), None)
   (* NEVER is also a special instruction *)
-  | Simple "NEVER" :: rest, var0 :: vars ->
-     ((fun exp -> kont (Exp.apply (exp_of_var "raise")
-                          [Asttypes.Nolabel,
-                           Exp.construct (Location.mknoloc (Longident.Lident "Never")) None])), None)
+  | Simple "NEVER" :: _,  _ :: _ ->
+     ((fun _ -> kont (Exp.apply (exp_of_var "raise")
+                        [Asttypes.Nolabel,
+                         Exp.construct (Location.mknoloc (Longident.Lident "Never")) None])), None)
   (* DUP duplicates name of the nth element of the stack *)
   | Simple "DUP" :: rest, vars ->
      exp_of_prog kont (SimpleWithNum ("DUP", 1) :: rest, vars)
@@ -418,12 +419,13 @@ let rec exp_of_prog kont = function
           (rest, produced_vars @ untouched_vars)
      with Not_found -> failwith ("Instruction not implemented: " ^ s)
     end
+  | _ -> failwith "exp_of_prog"
   and gen_branch kont rest var0 vars kont_body1 final_vars1 kont_body2 final_vars2 branch =
   match final_vars1, final_vars2 with
   | None, None ->
-     ((fun exp -> kont (branch (exp_of_var var0)
-                          (kont_body1 (exp_of_tuple_vars []))
-                          (kont_body2 (exp_of_tuple_vars [])))),
+     ((fun _ -> kont (branch (exp_of_var var0)
+                        (kont_body1 (exp_of_tuple_vars []))
+                        (kont_body2 (exp_of_tuple_vars [])))),
       None)
   | Some final_vars1, None ->
      let newvars1 = diff final_vars1 vars in
