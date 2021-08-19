@@ -1,7 +1,5 @@
 open Parsetree
 
-let sig_ = Parse.interface (Lexing.from_channel (open_in "../test/inst.mli"))
-
 (* Takes an arrow type and returns the numbers of arguments and results,
     assuming the arrow type is of the form ty1 -> ... -> tyn -> ty'1 * ... * ty'm,
     where ty is not a function type *)
@@ -26,4 +24,4 @@ let rec spec_of_item = function
      (name.txt, spec_of_ty ty) :: spec_of_item rest
   | _ :: rest -> spec_of_item rest
 
-let v = spec_of_item sig_
+let v = (ref [] : (string * (int * int)) list ref)
