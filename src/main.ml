@@ -7,7 +7,7 @@ let spec_file = ref "./inst.mli"
 let output_file = ref ""
 let input_file = ref ""
 let speclist =
-  [("-spec", Arg.Set_string input_file, "Set instruction spec file (default: ./inst.mli)");
+  [("-spec", Arg.Set_string spec_file, "Set instruction spec file (default: ./inst.mli)");
    ("-o", Arg.Set_string output_file, "Set output file name")]
 
 let read_trans_print () =
