@@ -187,7 +187,7 @@ let rec exp_of_prog kont = function
                      (Pat.tuple [pat_of_var var1; pat_of_tuple_vars parameters_for_body]) body in
         let var3 = newVar () in
         exp_of_prog
-          (fun expr -> kont (let_ (var3 :: let_bound_vars)
+          (fun expr -> kont (letp_ (Pat.tuple [pat_of_var var3; pat_of_tuple_vars let_bound_vars])
                                (Exp.apply (exp_of_var "map_list")
                                   [Asttypes.Nolabel, fun_;
                                    Asttypes.Nolabel,
