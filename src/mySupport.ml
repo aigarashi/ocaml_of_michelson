@@ -22,6 +22,14 @@ let let_ ids rhs body =
        pvb_loc = Location.none } ]
     body
 
+let letp_ pat rhs body =
+  Exp.let_ Asttypes.Nonrecursive
+    [ { pvb_pat  = pat;
+        pvb_expr = rhs;
+        pvb_attributes = [];
+       pvb_loc = Location.none } ]
+    body
+
 let call id ids =
   match ids with
     [] -> exp_of_var id
