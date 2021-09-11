@@ -14,4 +14,5 @@
  (name ocaml_of_michelson)
  (synopsis "A toy translater from Michelson to OCaml")
  (description "A toy translater from Michelson to OCaml")
+ (depends (menhir :build))
 )
