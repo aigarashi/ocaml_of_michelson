@@ -11,6 +11,7 @@ bug-reports: "https://github.com/aigarashi/ocaml_of_michelson/issues"
 depends: [
   "dune" {>= "2.9"}
   "odoc" {with-doc}
+  "menhir" {build}
 ]
 build: [
   ["dune" "subst" "--root" "."] {dev}
