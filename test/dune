@@ -1,0 +1,7 @@
+(cram
+ (deps %{bin:ocaml_of_michelson} inst.mli Makefile (glob_files *.tz)))
+
+(rule
+ (alias runtest)
+ (deps %{bin:ocaml_of_michelson} inst.mli Makefile (glob_files *.tz))
+ (action (run make)))

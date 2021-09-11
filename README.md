@@ -10,9 +10,7 @@ Tiny translator from Michelson to OCaml
 ## Build
 
 ```
-% cd src
-% make depend
-% make
+% dune build
 ```
 
 will build `ocaml_of_michelson` in `src`.
@@ -31,8 +29,7 @@ The option `-spec` (default `./inst.mli`) specifies an OCaml interface file that
 ## Test
 
 ```
-% cd test
-% make
+% dune test
 ```
 
 All `.tz` files are translated into `.ml`, which is typedchecked with `ocamlopt`.

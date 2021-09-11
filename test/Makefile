@@ -1,4 +1,4 @@
-OM := ../src/ocaml_of_michelson
+OM := ../src/main.exe
 
 SRCS := $(wildcard *.tz)
 OBJS := $(patsubst %.tz, %.ml,$(SRCS))
@@ -9,7 +9,7 @@ inst.cmi : inst.mli
 	ocamlopt -c $<
 
 %.ml: %.tz inst.cmi
-	sed -n '/^code/,$$p' < $< | $(OM) -o $@
+	sed -n '/^code/,$$p' < $< | $(OM) -o $@ 2> /dev/null
 	ocamlopt -i $@
 
 clean:

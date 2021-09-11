@@ -1,0 +1,9 @@
+(executable
+ (public_name ocaml_of_michelson)
+ (name main)
+ (libraries compiler-libs.common))
+
+(menhir
+ (modules mcParser))
+
+(ocamllex mcLexer)
