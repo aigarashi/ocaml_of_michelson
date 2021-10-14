@@ -2,6 +2,11 @@
     open Syntax
     open Ast_helper
     open MySupport
+#if OCAML_VERSION >= (4, 11, 0)
+#define PCONST_STRING(s, l, o) Pconst_string(s, l, o)
+#else
+#define PCONST_STRING(s, l, o) Pconst_string(s, o)
+#endif
 %}
 
 %token PARAM STORAGE CODE LPAREN RPAREN LBRACE RBRACE SEMI EOF
@@ -35,7 +40,7 @@ Tys :
   | ty=Ty tys=Tys { ty::tys }
 
 Literal :
-  | s=STR { Exp.constant (Pconst_string (s, Location.none, None)) }
+  | s=STR { Exp.constant (PCONST_STRING(s, Location.none, None)) }
   | i=INTV { Exp.constant (Pconst_integer (i, None)) }
   | b=BOOL { Exp.construct (Location.mknoloc (Longident.Lident (string_of_bool b))) None }
   | UNIT { Exp.tuple [] }
