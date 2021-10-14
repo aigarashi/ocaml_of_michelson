@@ -1,3 +1,9 @@
+#if OCAML_VERSION >= (4, 13, 0)
+#define NILCOMMA [] ,
+#else
+#define NILCOMMA
+#endif
+    
 open Ast_helper
 
 (* Auxiliary functions to build AST *)
@@ -41,12 +47,12 @@ let ifleft exp0 var1 exp1 var2 exp2 =
     [ Exp.case
         (Pat.construct
            (Location.mknoloc (Longident.Lident "Left"))
-           (Some (pat_of_var var1)))
+              (Some (NILCOMMA pat_of_var var1)))
         exp1
     ; Exp.case
         (Pat.construct
            (Location.mknoloc (Longident.Lident "Right"))
-           (Some (pat_of_var var2)))
+              (Some (NILCOMMA pat_of_var var2)))
         exp2
     ]
 
@@ -59,7 +65,7 @@ let ifnone exp0 exp1 var2 exp2 =
     ; Exp.case
         (Pat.construct
            (Location.mknoloc (Longident.Lident "Some"))
-           (Some (pat_of_var var2)))
+              (Some (NILCOMMA pat_of_var var2)))
         exp2
     ]
 
@@ -68,7 +74,7 @@ let ifcons exp0 var11 var12 exp1 exp2 =
     [ Exp.case
         (Pat.construct
            (Location.mknoloc (Longident.Lident "::"))
-           (Some (Pat.tuple [pat_of_var var11; pat_of_var var12])))
+           (Some (NILCOMMA Pat.tuple [pat_of_var var11; pat_of_var var12])))
         exp1 ;
       Exp.case
         (Pat.construct

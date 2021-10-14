@@ -1,6 +1,7 @@
 (executable
  (public_name ocaml_of_michelson)
  (name main)
+ (preprocess (action (run %{bin:cppo} -V OCAML:%{ocaml_version} %{input-file})))
  (libraries compiler-libs.common))
 
 (menhir
