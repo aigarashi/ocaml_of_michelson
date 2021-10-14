@@ -1,7 +1,7 @@
 #if OCAML_VERSION >= (4, 13, 0)
-#define NILCOMMA [] ,
+#define PAT_CONSTRUCT(l, p) Pat.construct l (Some ([], p))
 #else
-#define NILCOMMA
+#define PAT_CONSTRUCT(l, p) Pat.construct l (Some p)
 #endif
     
 open Ast_helper
@@ -45,14 +45,14 @@ let call id ids =
 let ifleft exp0 var1 exp1 var2 exp2 =
   Exp.match_ exp0
     [ Exp.case
-        (Pat.construct
-           (Location.mknoloc (Longident.Lident "Left"))
-              (Some (NILCOMMA pat_of_var var1)))
+        (PAT_CONSTRUCT(
+           (Location.mknoloc (Longident.Lident "Left")),
+           (pat_of_var var1)))
         exp1
     ; Exp.case
-        (Pat.construct
-           (Location.mknoloc (Longident.Lident "Right"))
-              (Some (NILCOMMA pat_of_var var2)))
+        (PAT_CONSTRUCT(
+           (Location.mknoloc (Longident.Lident "Right")),
+           (pat_of_var var2)))
         exp2
     ]
 
@@ -63,18 +63,18 @@ let ifnone exp0 exp1 var2 exp2 =
            (Location.mknoloc (Longident.Lident "None")) None)
         exp1
     ; Exp.case
-        (Pat.construct
-           (Location.mknoloc (Longident.Lident "Some"))
-              (Some (NILCOMMA pat_of_var var2)))
+        (PAT_CONSTRUCT(
+           (Location.mknoloc (Longident.Lident "Some")),
+           (pat_of_var var2)))
         exp2
     ]
 
 let ifcons exp0 var11 var12 exp1 exp2 =
   Exp.match_ exp0
     [ Exp.case
-        (Pat.construct
-           (Location.mknoloc (Longident.Lident "::"))
-           (Some (NILCOMMA Pat.tuple [pat_of_var var11; pat_of_var var12])))
+        (PAT_CONSTRUCT(
+           (Location.mknoloc (Longident.Lident "::")),
+           (Pat.tuple [pat_of_var var11; pat_of_var var12])))
         exp1 ;
       Exp.case
         (Pat.construct
