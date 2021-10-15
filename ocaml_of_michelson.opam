@@ -11,10 +11,11 @@ bug-reports: "https://github.com/aigarashi/ocaml_of_michelson/issues"
 depends: [
   "dune" {>= "2.9"}
   "menhir" {build}
+  "ocaml" {>= "4.13.0"}
   "odoc" {with-doc}
 ]
 build: [
-  ["dune" "subst" "--root" "."] {dev}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "build"
@@ -22,8 +23,7 @@ build: [
     name
     "-j"
     jobs
-    "--promote-install-files"
-    "false"
+    "--promote-install-files=false"
     "@install"
     "@runtest" {with-test}
     "@doc" {with-doc}
